@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
+    boolean success = true;
 
     CrosswordSolution(CrosswordGui crosswordGui){
         gui = crosswordGui;
