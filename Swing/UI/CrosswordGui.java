@@ -54,7 +54,7 @@ public class CrosswordGui {
         });
 
         JButton clearButton = new JButton("Clear");
-        newButton.addActionListener((ActionEvent e) -> {
+        clearButton.addActionListener((ActionEvent e) -> {
             for (int row = 0; row < matrix.length; row++) {
                 for (int col = 0; col < matrix[row].length; col++) {
                     if (matrix[row][col] != null)
