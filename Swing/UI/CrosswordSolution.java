@@ -71,6 +71,8 @@ public class CrosswordSolution implements ActionListener {
                             fillGrid(cgui,i,j,-1,name);
                         else
                             fillGrid(cgui,i,j,0,name);
+                        WORDS_MAP.remove(name);
+
 
                     }
                 }
