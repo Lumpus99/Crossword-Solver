@@ -2,6 +2,8 @@ package Swing.UI;
 
 import java.awt.*;
 import java.awt.event.WindowEvent;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import javax.swing.*;
 
 
@@ -65,7 +67,11 @@ public class SizePicker extends JFrame {
 
         generate.addActionListener((ActionEvent)->{
             if((Integer)x_size.getValue()>0 || (Integer)y_size.getValue() >0){
-                new CrosswordGui((Integer)x_size.getValue(),(Integer)y_size.getValue());
+                try {
+                    new CrosswordGui((Integer)x_size.getValue(),(Integer)y_size.getValue());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 
             }

@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -20,7 +22,7 @@ public class CrosswordGui {
     private final JLabel message = new JLabel("Crossword Puzzle");
     private int x_size,y_size;
 
-    public CrosswordGui(int x, int y) {
+    public CrosswordGui(int x, int y) throws IOException {
         x_size=x;
         y_size=y;
 
@@ -39,7 +41,7 @@ public class CrosswordGui {
 
     }
 
-    private void initializeGui(int x, int y) {
+    private void initializeGui(int x, int y) throws IOException {
         // set up the main GUI
         gui.setBorder(new EmptyBorder(5, 5, 5, 5));
         JToolBar tools = new JToolBar();
@@ -174,6 +176,13 @@ public class CrosswordGui {
         } else {
             return matrix[x][y].getText().charAt(0);
         }
+    }
+    public final boolean isBlack(int x,int y)
+    {
+        JButton square = squares[x][y];
+        if (square.getBackground() == Color.BLACK)
+            return true;
+        return false;
     }
 
     public final int getX_size() {
