@@ -14,13 +14,6 @@ public class CrosswordSolution implements ActionListener {
     private final HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
     CrosswordSolution(CrosswordGui crosswordGui) {
         gui = crosswordGui;
-        //Its optinal for printing our hash table
-        /*System.out.println(WORDS_MAP.size());
-        for (String name: WORDS_MAP.keySet()){
-            String key = name.toString();
-            int value = WORDS_MAP.get(name);
-            System.out.println(key + " " + value);
-        }*/
     }
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -44,21 +37,28 @@ public class CrosswordSolution implements ActionListener {
         }
         String line = "";
         try {
-                while ((line=br.readLine())!=null)
+                while ((line=br.readLine()) != null)
                     WORDS_MAP.put(line,line.length());
         } catch (IOException ex) {
                 ex.printStackTrace();
         }
+        //Its optinal for printing our hash table
+        /*System.out.println(WORDS_MAP.size());
+        for (String name: WORDS_MAP.keySet()){
+            String key = name.toString();
+            int value = WORDS_MAP.get(name);
+            System.out.println(key + " " + value);
+        }*/
         //FILLING with ' ' empty spaces.
         for(int i = 0; i < gui.getX_size(); i++)
             for (int j = 0; j < gui.getY_size(); j++)
                 gui.setLetter(i, j,' ');
-        if(solve_Puzzle(gui)==null)
+        if(solve_Puzzle() == null)
             System.out.println("NO SOLUTION!");
         else
             System.out.println("A solution exists.");
     }
-    private CrosswordGui solve_Puzzle(CrosswordGui gui)
+    private CrosswordGui solve_Puzzle()
     {
         /*if(everycharacterisnotEmpty(gui))
             return gui;
@@ -73,21 +73,21 @@ public class CrosswordSolution implements ActionListener {
                     for (String name: WORDS_MAP.keySet()) {
                         if(gui.getLetter(i,j)==' ' || (gui.getLetter(i,j)!=' ' && name.charAt(0) == gui.getLetter(i,j) && ((i < gui.getX_size()-1 && gui.getLetter(i + 1, j )==' ') || (j < gui.getY_size()-1 && gui.getLetter(i, j + 1 )==' ')))) {
                             //We make a copy here.
-                            CrosswordGui cgui = gui;
                             boolean t1 = true, t2 = true ,t3 = true, t4 = true;
-                            String key = name;
                             int value = WORDS_MAP.get(name);
-                            t1 = canbeFilled(cgui, i, j, -1, value);
-                            t2 = canbeFilled(cgui, i, j, 0, value);
+                            t1 = canbeFilled(i, j, -1, value);
+                            t2 = canbeFilled(i, j, 0, value);
                             if (!(t1 || t2))
-                                break;
+                                continue;
                             if(t1)
-                                t3 = fillGrid(cgui, i , j, -1, name);
+                                t3 = fillGrid(i , j, -1, name);
                             else
-                                t4 = fillGrid(cgui, i, j,0,name);
+                                t4 = fillGrid(i, j,0,name);
                             if(!(t3 || t4))
                                 continue;
                             WORDS_MAP.remove(name);
+                            if (everycharacterisnotEmpty())
+                                return gui;
                             i = -1;
                             continue outer;
                             //return solve_Puzzle(cgui);
@@ -98,15 +98,15 @@ public class CrosswordSolution implements ActionListener {
         }
         return null;
     }
-    private boolean everycharacterisnotEmpty(CrosswordGui cgui)
+    private boolean everycharacterisnotEmpty()
     {
-        for(int i = 0; i < cgui.getX_size(); i++)
-            for (int j = 0; j < cgui.getY_size(); j++)
-                if(cgui.getLetter(i,j)==' ')
+        for(int i = 0; i < gui.getX_size(); i++)
+            for (int j = 0; j < gui.getY_size(); j++)
+                if(gui.getLetter(i,j)==' ')
                     return false;
         return true;
     }
-    private boolean canbeFilled(CrosswordGui cgui,int x,int y,int xory,int value)
+    private boolean canbeFilled(int x,int y,int xory,int value)
     {
         boolean t = true;
         if(xory == -1){ // we look for y
@@ -114,7 +114,7 @@ public class CrosswordSolution implements ActionListener {
             do{
                 count++;
                 z++;
-            }while(z < cgui.getY_size() && !cgui.isBlack(x,z) );
+            }while(z < gui.getY_size() && !gui.isBlack(x,z) );
             if(value != count )
                 t = false;
         }
@@ -124,63 +124,63 @@ public class CrosswordSolution implements ActionListener {
             do{
                 count++;
                 z++;
-            }while(z < cgui.getX_size() && !cgui.isBlack(z,y) );
+            }while(z < gui.getX_size() && !gui.isBlack(z,y) );
             if(value != count )
                 t = false;
         }
         return t;
     }
-    private boolean fillGrid(CrosswordGui cgui,int x,int y,int xory,String name)
+    private boolean fillGrid(int x,int y,int xory,String name)
     {
         int[] marker = new int[name.length()];
         if(xory == -1){ // we fill for y
-            if(!((y >= 1 && cgui.isBlack(x,y-1)) || y == 0))
+            if(!((y >= 1 && gui.isBlack(x,y-1)) || y == 0))
                 return false;
             int z = y,count = 0;
-            while(z < cgui.getY_size() && !cgui.isBlack(x,z) )
+            while(z < gui.getY_size() && !gui.isBlack(x,z) )
             {
-                if(cgui.getLetter(x,z) != ' ' && cgui.getLetter(x,z) != name.charAt(count)){
+                if(gui.getLetter(x,z) != ' ' && gui.getLetter(x,z) != name.charAt(count)){
                     z--; count--;
                     while ( z >= y)
                     {
                         if (marker[count] == 0)
-                            cgui.setLetter(x,z,' ');
+                            gui.setLetter(x,z,' ');
                         z--;
                         count--;
                     }
                     return false;
                 }
-                if(cgui.getLetter(x,z) == ' ')
+                if(gui.getLetter(x,z) == ' ')
                     marker[count] = 0;
                 else
                     marker[count] = 1;
-                cgui.setLetter(x,z,name.charAt(count));
+                gui.setLetter(x,z,name.charAt(count));
                 count++;
                 z++;
             }
         }
         else{ // we fill for x
-            if(!((x >= 1 && cgui.isBlack(x - 1,y)) || x == 0))
+            if(!((x >= 1 && gui.isBlack(x - 1,y)) || x == 0))
                 return false;
             int z = x,count = 0;
-            while(z < cgui.getX_size() && !cgui.isBlack(z,y) )
+            while(z < gui.getX_size() && !gui.isBlack(z,y) )
             {
-                if(cgui.getLetter(z,y) != ' ' && cgui.getLetter(z,y) != name.charAt(count)) {
+                if(gui.getLetter(z,y) != ' ' && gui.getLetter(z,y) != name.charAt(count)) {
                     z--; count--;
                     while ( z >= x)
                     {
                         if (marker[count] == 0)
-                            cgui.setLetter(z,y,' ');
+                            gui.setLetter(z,y,' ');
                         z--;
                         count--;
                     }
                     return false;
                 }
-                if(cgui.getLetter(z,y) == ' ')
+                if(gui.getLetter(z,y) == ' ')
                     marker[count] = 0;
                 else
                     marker[count] = 1;
-                cgui.setLetter(z,y,name.charAt(count));
+                gui.setLetter(z,y,name.charAt(count));
                 count++;
                 z++;
             }
