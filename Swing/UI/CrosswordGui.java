@@ -22,7 +22,7 @@ public class CrosswordGui {
     private final JLabel message = new JLabel("Crossword Puzzle");
     private int x_size,y_size;
 
-    public CrosswordGui(int x, int y) throws IOException {
+    public CrosswordGui(int x, int y) {
         x_size=x;
         y_size=y;
 
@@ -41,7 +41,7 @@ public class CrosswordGui {
 
     }
 
-    private void initializeGui(int x, int y) throws IOException {
+    private void initializeGui(int x, int y) {
         // set up the main GUI
         gui.setBorder(new EmptyBorder(5, 5, 5, 5));
         JToolBar tools = new JToolBar();

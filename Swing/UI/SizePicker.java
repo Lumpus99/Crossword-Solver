@@ -29,8 +29,8 @@ public class SizePicker extends JFrame {
         constraints.gridy = 0;
         newPanel.add(labelUsername, constraints);
 
-        SpinnerNumberModel x_model = new SpinnerNumberModel(10, 5, 50, 1);
-        SpinnerNumberModel y_model = new SpinnerNumberModel(20, 5, 50, 1);
+        SpinnerNumberModel x_model = new SpinnerNumberModel(5, 5, 50, 1);
+        SpinnerNumberModel y_model = new SpinnerNumberModel(5, 5, 50, 1);
 
         JSpinner x_size = new JSpinner(x_model);
         JSpinner y_size = new JSpinner(y_model);
@@ -67,13 +67,8 @@ public class SizePicker extends JFrame {
 
         generate.addActionListener((ActionEvent)->{
             if((Integer)x_size.getValue()>0 || (Integer)y_size.getValue() >0){
-                try {
-                    new CrosswordGui((Integer)x_size.getValue(),(Integer)y_size.getValue());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                new CrosswordGui((Integer)x_size.getValue(),(Integer)y_size.getValue());
                 this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
-
             }
 
         });
