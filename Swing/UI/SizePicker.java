@@ -13,8 +13,8 @@ public class SizePicker extends JFrame {
     public SizePicker() {
         super("Crossword Solver");
 
-        JLabel labelUsername = new JLabel("Number of rows: ");
-        JLabel labelPassword = new JLabel("Number of columns: ");
+        JLabel labelRows = new JLabel("Number of rows: ");
+        JLabel labelColumns = new JLabel("Number of columns: ");
         JButton generate = new JButton("Generate");
 
         // create a new panel with GridBagLayout manager
@@ -27,7 +27,7 @@ public class SizePicker extends JFrame {
         // add components to the panel
         constraints.gridx = 0;
         constraints.gridy = 0;
-        newPanel.add(labelUsername, constraints);
+        newPanel.add(labelRows, constraints);
 
         SpinnerNumberModel x_model = new SpinnerNumberModel(5, 5, 50, 1);
         SpinnerNumberModel y_model = new SpinnerNumberModel(5, 5, 50, 1);
@@ -54,7 +54,7 @@ public class SizePicker extends JFrame {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
-        newPanel.add(labelPassword, constraints);
+        newPanel.add(labelColumns, constraints);
 
         constraints.gridx = 1;
         newPanel.add(y_size, constraints);
