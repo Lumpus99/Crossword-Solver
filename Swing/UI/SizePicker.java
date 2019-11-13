@@ -11,7 +11,7 @@ import javax.swing.*;
 public class SizePicker extends JFrame {
 
     public SizePicker() {
-        super("Swing.UI.Crossword Solver");
+        super("Crossword Solver");
 
         JLabel labelUsername = new JLabel("Number of rows: ");
         JLabel labelPassword = new JLabel("Number of columns: ");
