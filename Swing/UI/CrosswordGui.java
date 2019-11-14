@@ -23,7 +23,7 @@ public class CrosswordGui {
     private final JLabel message = new JLabel("Crossword Puzzle");
     private int x_size,y_size;
 
-    public CrosswordGui(int x, int y) {
+    public CrosswordGui(int x, int y, int n_copy) {
         x_size=x;
         y_size=y;
 
@@ -37,8 +37,10 @@ public class CrosswordGui {
         frame.pack();
         // ensures the minimum size is enforced.
         frame.setMinimumSize(frame.getSize());
-
-        frame.setVisible(true);
+        if( n_copy == 0 )
+            frame.setVisible(true);
+        else
+            frame.setVisible(false);
 
     }
 
@@ -189,7 +191,7 @@ public class CrosswordGui {
         if (square.getBackground() == Color.BLACK) {
             return '\0';
         } else {
-            return matrix[x][y].getText().charAt(0);
+            return Character.toLowerCase(matrix[x][y].getText().charAt(0));
         }
     }
     public final boolean isBlack(int x,int y)

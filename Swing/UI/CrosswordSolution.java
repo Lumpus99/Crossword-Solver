@@ -1,6 +1,4 @@
 package Swing.UI;
-import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -18,7 +16,7 @@ public class CrosswordSolution implements ActionListener {
     }
     @Override
     public void actionPerformed(ActionEvent e) {
-        System.out.println("X= "+gui.getX_size()+"Y= "+gui.getY_size());
+        /*System.out.println("X= "+gui.getX_size()+"Y= "+gui.getY_size());
         //returns true if white - false if black
         gui.setLetter(0,0,'A');
         gui.setLetter(0,1,'A');
@@ -35,11 +33,11 @@ public class CrosswordSolution implements ActionListener {
         System.out.println(gui.isUserEntered(0,0));
         System.out.println(gui.isUserEntered(0,1));
         System.out.println(gui.isUserEntered(1,0));
-        System.out.println(gui.isUserEntered(1,1));
+        System.out.println(gui.isUserEntered(1,1));*/
 
-        /*BufferedReader br = null;
+        BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("Crossword-Solver\\words.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Oğuz Andaş\\IdeaProjects\\Crossword-Solver\\words.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -50,21 +48,17 @@ public class CrosswordSolution implements ActionListener {
         } catch (IOException ex) {
                 ex.printStackTrace();
         }
-        //Its optinal for printing our hash table
+        /*//Its optinal for printing our hash table
         System.out.println(WORDS_MAP.size());
         for (String name: WORDS_MAP.keySet()){
             String key = name.toString();
             int value = WORDS_MAP.get(name);
             System.out.println(key + " " + value);
         }*/
-        //FILLING with ' ' empty spaces.
-        /*for(int i = 0; i < gui.getX_size(); i++)
-            for (int j = 0; j < gui.getY_size(); j++)
-                gui.setLetter(i, j,' ');*/
         if(solve_Puzzle() == null) {
-            gui.result("A solution is found",true);
-        }else {
             gui.result("No solution found",false);
+        }else {
+            gui.result("A solution is found",true);
 
 
         }
@@ -82,7 +76,7 @@ public class CrosswordSolution implements ActionListener {
                 if(!gui.isBlack(i,j))
                 {
                     for (String name: WORDS_MAP.keySet()) {
-                        if(gui.getLetter(i,j)==' ' || (gui.getLetter(i,j)!=' ' && name.charAt(0) == gui.getLetter(i,j) && ((i < gui.getX_size()-1 && gui.getLetter(i + 1, j )==' ') || (j < gui.getY_size()-1 && gui.getLetter(i, j + 1 )==' ')))) {
+                        if(gui.getLetter(i,j)=='\0' || (gui.getLetter(i,j)!='\0' && name.charAt(0) == gui.getLetter(i,j) && ((i < gui.getX_size()-1 && gui.getLetter(i + 1, j )=='\0') || (j < gui.getY_size()-1 && gui.getLetter(i, j + 1 )=='\0')))) {
                             //We make a copy here.
                             boolean t1 = true, t2 = true ,t3 = true, t4 = true;
                             int value = WORDS_MAP.get(name);
@@ -113,7 +107,7 @@ public class CrosswordSolution implements ActionListener {
     {
         for(int i = 0; i < gui.getX_size(); i++)
             for (int j = 0; j < gui.getY_size(); j++)
-                if(gui.getLetter(i,j)==' ')
+                if(!gui.isBlack(i , j) && gui.getLetter(i,j)=='\0')
                     return false;
         return true;
     }
@@ -150,24 +144,57 @@ public class CrosswordSolution implements ActionListener {
             int z = y,count = 0;
             while(z < gui.getY_size() && !gui.isBlack(x,z) )
             {
-                if(gui.getLetter(x,z) != ' ' && gui.getLetter(x,z) != name.charAt(count)){
-                    z--; count--;
-                    while ( z >= y)
-                    {
-                        if (marker[count] == 0)
-                            gui.setLetter(x,z,' ');
-                        z--;
-                        count--;
-                    }
+                if(gui.getLetter(x,z) != '\0' && gui.getLetter(x,z) != name.charAt(count)){
+                    clearWord(z ,x, y, marker, count, xory);
                     return false;
                 }
-                if(gui.getLetter(x,z) == ' ')
+                if(gui.getLetter(x,z) == '\0')
                     marker[count] = 0;
                 else
                     marker[count] = 1;
                 gui.setLetter(x,z,name.charAt(count));
                 count++;
                 z++;
+            }
+            for(int i = y; i < y + name.length(); i++)
+            {
+                int j = x , empty = 0;
+                String word = "";
+                while ( j != 0 && !gui.isBlack(j , i))
+                    j--;
+                while ( j < gui.getX_size() && !gui.isBlack(j , i) && gui.getLetter(j ,i) != '\0') {
+                    word += gui.getLetter(j, i);
+                    j++;
+                }
+                if (j < gui.getX_size() && gui.getLetter(j ,i) == '\0')
+                    empty = 1;
+                if(!WORDS_MAP.containsKey(word))
+                {
+                    if (empty == 1 && !word.equals("")) {
+                        boolean t = false;
+                        for (String keys : WORDS_MAP.keySet()) {
+                            t = true;
+                            for (int e = 0; e < word.length(); e++) {
+                                if (WORDS_MAP.get(keys) < word.length() || keys.charAt(e) != word.charAt(e)) {
+                                    t = false;
+                                    break;
+                                }
+                            }
+                            if (t)
+                                break;
+                        }
+                        if (!t) {
+                            clearWord(z, x, y, marker, count, xory);
+                            return false;
+                        }
+                    }
+                    else {
+                        clearWord(z ,x, y, marker, count, xory);
+                        return false;
+                    }
+                }
+                else
+                    WORDS_MAP.remove(word);
             }
         }
         else{ // we fill for x
@@ -176,18 +203,11 @@ public class CrosswordSolution implements ActionListener {
             int z = x,count = 0;
             while(z < gui.getX_size() && !gui.isBlack(z,y) )
             {
-                if(gui.getLetter(z,y) != ' ' && gui.getLetter(z,y) != name.charAt(count)) {
-                    z--; count--;
-                    while ( z >= x)
-                    {
-                        if (marker[count] == 0)
-                            gui.setLetter(z,y,' ');
-                        z--;
-                        count--;
-                    }
+                if(gui.getLetter(z,y) != '\0' && gui.getLetter(z,y) != name.charAt(count)) {
+                    clearWord(z ,x, y, marker, count, xory);
                     return false;
                 }
-                if(gui.getLetter(z,y) == ' ')
+                if(gui.getLetter(z,y) == '\0')
                     marker[count] = 0;
                 else
                     marker[count] = 1;
@@ -195,7 +215,69 @@ public class CrosswordSolution implements ActionListener {
                 count++;
                 z++;
             }
+            for(int i = x; i < x + name.length(); i++)
+            {
+                int j = y , empty = 0;
+                String word = "";
+                while ( j != 0 && !gui.isBlack(i , j))
+                    j--;
+                while ( j < gui.getY_size() && !gui.isBlack(i , j) && gui.getLetter(i ,j) != '\0') {
+                    word += gui.getLetter(i, j);
+                    j++;
+                }
+                if (j < gui.getY_size() && gui.getLetter(i ,j) == '\0')
+                    empty = 1;
+                if(!WORDS_MAP.containsKey(word))
+                {
+                    if (empty == 1 && !word.equals("")) {
+                        boolean t = false;
+                        for (String keys : WORDS_MAP.keySet()) {
+                            t = true;
+                            for (int e = 0; e < word.length(); e++) {
+                                if (WORDS_MAP.get(keys) < word.length() || keys.charAt(e) != word.charAt(e)) {
+                                    t = false;
+                                    break;
+                                }
+                            }
+                            if (t)
+                                break;
+                        }
+                        if (!t) {
+                            clearWord(z, x, y, marker, count, xory);
+                            return false;
+                        }
+                    }
+                    else {
+                        clearWord(z ,x, y, marker, count, xory);
+                        return false;
+                    }
+                }
+                else
+                    WORDS_MAP.remove(word);
+            }
         }
         return true;
+    }
+    // We clear word when conditions are not appropriate
+    public void clearWord(int z, int x, int y, int[] marker, int count, int xory)
+    {
+        z--; count--;
+        if(xory == -1) { // deleting from x
+            while (z >= y) {
+                if (marker[count] == 0)
+                    gui.setLetter(x, z, '\0');
+                z--;
+                count--;
+            }
+        }
+        else {
+            while ( z >= x)
+            {
+                if (marker[count] == 0)
+                    gui.setLetter(z, y,'\0');
+                z--;
+                count--;
+            }
+        }
     }
 }
