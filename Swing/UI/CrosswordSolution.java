@@ -2,15 +2,18 @@ package Swing.UI;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Stack;
 import java.util.HashMap;
 import java.io.*;
-
 
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
     private final HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
+    private Stack<char[][]> crosswords;
+    private Stack<ArrayList<String>> words;
     CrosswordSolution(CrosswordGui crosswordGui) {
         gui = crosswordGui;
     }
@@ -34,17 +37,21 @@ public class CrosswordSolution implements ActionListener {
         System.out.println(gui.isUserEntered(0,1));
         System.out.println(gui.isUserEntered(1,0));
         System.out.println(gui.isUserEntered(1,1));*/
-
+        crosswords = new Stack<>();
+        words = new Stack<>();
+        ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Oğuz Andaş\\IdeaProjects\\Crossword-Solver\\words.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Oğuz Andaş\\IdeaProjects\\Crossword-Solver\\words3.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
         String line = "";
         try {
-                while ((line=br.readLine()) != null)
-                    WORDS_MAP.put(line,line.length());
+                while ((line=br.readLine()) != null) {
+                    WORDS_MAP.put(line, line.length());
+                    allwords.add(line);
+                }
         } catch (IOException ex) {
                 ex.printStackTrace();
         }
@@ -55,20 +62,309 @@ public class CrosswordSolution implements ActionListener {
             int value = WORDS_MAP.get(name);
             System.out.println(key + " " + value);
         }*/
-        if(solve_Puzzle() == null) {
+        char[][] guimatrix = new char[gui.getX_size()][gui.getY_size()];
+        changetoMatrix(guimatrix,gui);
+        crosswords.push(guimatrix);
+        words.push(allwords);
+        char[][] solved = solve_Puzzle();
+        if(solved == null) {
             gui.result("No solution found",false);
         }else {
+            changetoGui(solved);
             gui.result("A solution is found",true);
-
-
         }
     }
-    private CrosswordGui solve_Puzzle()
+    private char[][] solve_Puzzle()
     {
         /*if(everycharacterisnotEmpty(gui))
             return gui;
         if(WORDS_MAP.isEmpty())
             return null;*/
+        char[][] nextmatrix;
+        char[][] cmatrix;
+        ArrayList<String> nextmap;
+        ArrayList<String> cmap;
+        outer:
+        while(!crosswords.isEmpty()) {
+            while(!words.isEmpty() && words.peek().size() == 0 )
+            {
+                if (everycharacterisnotEmpty(crosswords.peek()))
+                    return crosswords.peek();
+                crosswords.pop();
+                words.pop();
+
+            }
+            if (crosswords.isEmpty())
+                break;
+            cmatrix = crosswords.peek();
+            cmap = words.peek();
+            for (int i = 0; i < cmatrix.length; i++) {
+                for (int j = 0; j < cmatrix[i].length; j++) {
+                    if (cmatrix[i][j] != '?') {
+                        for (String name : cmap) {
+                            if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0')))) {
+                                //We make a copy here.
+                                boolean t1 = true, t2 = true, t3 = true, t4 = true;
+                                int value = name.length();
+                                nextmatrix = new char[gui.getX_size()][gui.getY_size()];
+                                copyGui(nextmatrix, crosswords.peek());
+                                nextmap = new ArrayList<>();
+                                copyMap(nextmap, words.peek());
+                                t1 = canbeFilled(i, j, -1, value ,nextmatrix);
+                                t2 = canbeFilled(i, j, 0, value ,nextmatrix);
+                                if (!(t1 || t2)) {
+                                    nextmap = null;
+                                    nextmatrix = null;
+                                    continue;
+                                }
+                                if (t1)
+                                    t3 = fillGrid(i, j, -1, name, nextmatrix);
+                                else
+                                    t4 = fillGrid(i, j, 0, name, nextmatrix);
+                                if (!(t3 || t4)) {
+                                    nextmap = null;
+                                    nextmatrix = null;
+                                    continue;
+                                }
+                                if (everycharacterisnotEmpty(nextmatrix))
+                                    return nextmatrix;
+                                cmap.remove(name);
+                                nextmap.remove(name);
+                                words.push(nextmap);
+                                crosswords.push(nextmatrix);
+                                System.out.println(words.size() +" WORDS AND CROSSWORDS SIZES " + crosswords.size() );
+                                continue outer;
+                                //return solve_Puzzle(cgui);
+                            }
+                        }
+                    }
+                }
+            }
+            crosswords.pop();
+            words.pop();
+
+
+            /*crosswords.pop();
+            words.pop();
+            gtemp = crosswords.pop();
+            tmap = words.pop();
+            copyGui(gtemp,crosswords.peek());
+            copyMap(tmap, words.peek());
+            crosswords.push(gtemp);
+            words.push(tmap);*/
+        }
+        return null;
+    }
+    private boolean canbeFilled(int x, int y, int xory, int value, char[][] nextmatrix)
+    {
+        boolean t = true;
+        if(xory == -1){ // we look for y
+            int z = y,count = 0;
+            do{
+                count++;
+                z++;
+            }while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' );
+            if(value != count )
+                t = false;
+        }
+        else
+        {
+            int z = x,count = 0;
+            do{
+                count++;
+                z++;
+            }while(z < nextmatrix.length && nextmatrix[z][y] != '?' );
+            if(value != count )
+                t = false;
+        }
+        return t;
+    }
+    private boolean fillGrid(int x, int y, int xory, String name, char[][] nextmatrix)
+    {
+        int[] marker = new int[name.length()];
+        if(xory == -1){ // we fill for y
+            if(!((y >= 1 && nextmatrix[x][y - 1] == '?') || y == 0))
+                return false;
+            int z = y,count = 0;
+            while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' )
+            {
+                if(nextmatrix[x][z] != '\0' && nextmatrix[x][z] != name.charAt(count)){
+                    clearWord(z ,x, y, marker, count, xory ,nextmatrix );
+                    return false;
+                }
+                if(nextmatrix[x][z] == '\0')
+                    marker[count] = 0;
+                else
+                    marker[count] = 1;
+                nextmatrix[x][z] = name.charAt(count);
+                count++;
+                z++;
+            }
+            for(int i = y; i < y + name.length(); i++)
+            {
+                int j = x , empty = 0;
+                String word = "";
+                while ( j != 0 && nextmatrix[j][i] != '?')
+                    j--;
+                if (nextmatrix[j][i] == '?')
+                    j++;
+                while ( j < nextmatrix.length && nextmatrix[j][i] != '?' && nextmatrix[j][i] != '\0') {
+                    word += nextmatrix[j][i];
+                    j++;
+                }
+                if (j < nextmatrix.length && nextmatrix[j][i] != '?' && nextmatrix[j][i] == '\0')
+                    empty = 1;
+                if(!WORDS_MAP.containsKey(word) && !word.equals(""))
+                {
+                    if (empty == 1) {
+                        boolean t = false;
+                        for (String keys : WORDS_MAP.keySet()) {
+                            t = true;
+                            for (int e = 0; e < word.length(); e++) {
+                                if (WORDS_MAP.get(keys) < word.length() || keys.charAt(e) != word.charAt(e)) {
+                                    t = false;
+                                    break;
+                                }
+                            }
+                            if (t)
+                                break;
+                        }
+                        if (!t) {
+                            clearWord(z, x, y, marker, count, xory,nextmatrix);
+                            return false;
+                        }
+                    }
+                    else {
+                        clearWord(z ,x, y, marker, count, xory,nextmatrix);
+                        return false;
+                    }
+                }
+            }
+        }
+        else{ // we fill for x
+            if(!((x >= 1 && nextmatrix[x - 1][y] == '?') || x == 0))
+                return false;
+            int z = x,count = 0;
+            while(z < nextmatrix.length && nextmatrix[z][y] != '?' )
+            {
+                if(nextmatrix[z][y] != '\0' && nextmatrix[z][y] != name.charAt(count)) {
+                    clearWord(z ,x, y, marker, count, xory,nextmatrix);
+                    return false;
+                }
+                if(nextmatrix[z][y] == '\0')
+                    marker[count] = 0;
+                else
+                    marker[count] = 1;
+                nextmatrix[z][y] = name.charAt(count);
+                count++;
+                z++;
+            }
+            for(int i = x; i < x + name.length(); i++)
+            {
+                int j = y , empty = 0;
+                String word = "";
+                while ( j != 0 && nextmatrix[i][j] != '?')
+                    j--;
+                if (nextmatrix[i][j] == '?')
+                    j++;
+                while ( j < nextmatrix[x].length && nextmatrix[i][j] != '?' && nextmatrix[i][j] != '\0') {
+                    word += nextmatrix[i][j];
+                    j++;
+                }
+                if (j < nextmatrix[x].length && nextmatrix[i][j] != '?' && nextmatrix[i][j] == '\0')
+                    empty = 1;
+                if(!WORDS_MAP.containsKey(word) && !word.equals(""))
+                {
+                    if (empty == 1) {
+                        boolean t = false;
+                        for (String keys : WORDS_MAP.keySet()) {
+                            t = true;
+                            for (int e = 0; e < word.length(); e++) {
+                                if (WORDS_MAP.get(keys) < word.length() || keys.charAt(e) != word.charAt(e)) {
+                                    t = false;
+                                    break;
+                                }
+                            }
+                            if (t)
+                                break;
+                        }
+                        if (!t) {
+                            clearWord(z, x, y, marker, count, xory ,nextmatrix);
+                            return false;
+                        }
+                    }
+                    else {
+                        clearWord(z ,x, y, marker, count, xory,nextmatrix);
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    // We clear word when conditions are not appropriate
+    public void clearWord(int z, int x, int y, int[] marker, int count, int xory, char[][] nextgui)
+    {
+        z--; count--;
+        if(xory == -1) { // deleting from x
+            while (z >= y) {
+                if (marker[count] == 0)
+                    nextgui[x][z] = '\0';
+                z--;
+                count--;
+            }
+        }
+        else {
+            while ( z >= x)
+            {
+                if (marker[count] == 0)
+                    nextgui[z][y] = '\0';
+                z--;
+                count--;
+            }
+        }
+    }
+    private boolean everycharacterisnotEmpty(char[][] nextmatrix)
+    {
+        for(int i = 0; i < nextmatrix.length; i++)
+            for (int j = 0; j < nextmatrix[i].length; j++)
+                if(nextmatrix[i][j] != '?' && nextmatrix[i][j] == '\0')
+                    return false;
+        return true;
+    }
+    private void changetoMatrix(char[][] matrix,CrosswordGui gui)
+    {
+        for(int i = 0; i < gui.getX_size(); i++)
+            for (int j = 0; j < gui.getY_size(); j++)
+                if( gui.isBlack(i,j) )
+                    matrix[i][j] = '?';
+                else
+                    matrix[i][j] = gui.getLetter(i,j);
+    }
+    private void changetoGui(char[][] matrix)
+    {
+        for(int i = 0; i < matrix.length; i++)
+            for (int j = 0; j < matrix[i].length; j++)
+                if( matrix[i][j] != '?' ) //which means gui's that position is black itself
+                    gui.setLetter(i, j, matrix[i][j]);
+    }
+    private void copyMap(ArrayList<String> nextmap, ArrayList<String> tmap) {
+        for (String name : tmap)
+            nextmap.add(name);
+    }
+    private void copyGui(char[][] copied,char[][] copiedone)
+    {
+        for (int i = 0; i < copiedone.length; i++)
+            for (int j = 0; j < copiedone[i].length; j++)
+                copied[i][j] = copiedone[i][j];
+    }
+    //PREVIOUS That works only one time
+    /*private CrosswordGui solve_Puzzle()
+    {
+        /*if(everycharacterisnotEmpty(gui))
+            return gui;
+        if(WORDS_MAP.isEmpty())
+            return null;
         outer:
         for(int i = 0; i < gui.getX_size(); i++) {
             for (int j = 0; j < gui.getY_size(); j++)
@@ -80,8 +376,8 @@ public class CrosswordSolution implements ActionListener {
                             //We make a copy here.
                             boolean t1 = true, t2 = true ,t3 = true, t4 = true;
                             int value = WORDS_MAP.get(name);
-                            t1 = canbeFilled(i, j, -1, value);
-                            t2 = canbeFilled(i, j, 0, value);
+                            t1 = canbeFilled(i, j, -1 ,value);
+                            t2 = canbeFilled(i, j, 0 ,value);
                             if (!(t1 || t2))
                                 continue;
                             if(t1)
@@ -103,15 +399,7 @@ public class CrosswordSolution implements ActionListener {
         }
         return null;
     }
-    private boolean everycharacterisnotEmpty()
-    {
-        for(int i = 0; i < gui.getX_size(); i++)
-            for (int j = 0; j < gui.getY_size(); j++)
-                if(!gui.isBlack(i , j) && gui.getLetter(i,j)=='\0')
-                    return false;
-        return true;
-    }
-    private boolean canbeFilled(int x,int y,int xory,int value)
+    private boolean canbeFilled(int x, int y, int xory,int value)
     {
         boolean t = true;
         if(xory == -1){ // we look for y
@@ -135,7 +423,7 @@ public class CrosswordSolution implements ActionListener {
         }
         return t;
     }
-    private boolean fillGrid(int x,int y,int xory,String name)
+    private boolean fillGrid(int x, int y, int xory, String name)
     {
         int[] marker = new int[name.length()];
         if(xory == -1){ // we fill for y
@@ -145,7 +433,7 @@ public class CrosswordSolution implements ActionListener {
             while(z < gui.getY_size() && !gui.isBlack(x,z) )
             {
                 if(gui.getLetter(x,z) != '\0' && gui.getLetter(x,z) != name.charAt(count)){
-                    clearWord(z ,x, y, marker, count, xory);
+                    clearWord(z ,x, y, marker, count, xory );
                     return false;
                 }
                 if(gui.getLetter(x,z) == '\0')
@@ -162,16 +450,21 @@ public class CrosswordSolution implements ActionListener {
                 String word = "";
                 while ( j != 0 && !gui.isBlack(j , i))
                     j--;
+                if (gui.isBlack(j , i))
+                    j++;
                 while ( j < gui.getX_size() && !gui.isBlack(j , i) && gui.getLetter(j ,i) != '\0') {
                     word += gui.getLetter(j, i);
                     j++;
                 }
-                if (j < gui.getX_size() && gui.getLetter(j ,i) == '\0')
+                if (j < gui.getX_size() && !gui.isBlack(j , i) && gui.getLetter(j ,i) == '\0')
                     empty = 1;
-                if(!WORDS_MAP.containsKey(word))
+
+                System.out.println("WORD for x'th column = " +word);
+                if(!WORDS_MAP.containsKey(word) && !word.equals(""))
                 {
-                    if (empty == 1 && !word.equals("")) {
+                    if (empty == 1) {
                         boolean t = false;
+                        System.out.println("ENTERED in WORDS_MAP key set for x!");
                         for (String keys : WORDS_MAP.keySet()) {
                             t = true;
                             for (int e = 0; e < word.length(); e++) {
@@ -184,6 +477,7 @@ public class CrosswordSolution implements ActionListener {
                                 break;
                         }
                         if (!t) {
+                            System.out.println("ENTERED!");
                             clearWord(z, x, y, marker, count, xory);
                             return false;
                         }
@@ -221,16 +515,20 @@ public class CrosswordSolution implements ActionListener {
                 String word = "";
                 while ( j != 0 && !gui.isBlack(i , j))
                     j--;
+                if (gui.isBlack(i , j))
+                    j++;
                 while ( j < gui.getY_size() && !gui.isBlack(i , j) && gui.getLetter(i ,j) != '\0') {
                     word += gui.getLetter(i, j);
                     j++;
                 }
-                if (j < gui.getY_size() && gui.getLetter(i ,j) == '\0')
+                if (j < gui.getY_size() && !gui.isBlack(i , j) && gui.getLetter(i ,j) == '\0')
                     empty = 1;
-                if(!WORDS_MAP.containsKey(word))
+                System.out.println("WORD for y'th column = " +word);
+                if(!WORDS_MAP.containsKey(word) && !word.equals(""))
                 {
-                    if (empty == 1 && !word.equals("")) {
+                    if (empty == 1) {
                         boolean t = false;
+                        System.out.println("ENTERED in WORDS_MAP key set for y!");
                         for (String keys : WORDS_MAP.keySet()) {
                             t = true;
                             for (int e = 0; e < word.length(); e++) {
@@ -243,7 +541,8 @@ public class CrosswordSolution implements ActionListener {
                                 break;
                         }
                         if (!t) {
-                            clearWord(z, x, y, marker, count, xory);
+                            System.out.println("ENTERED for y in empty !=1");
+                            clearWord(z, x, y, marker, count, xory );
                             return false;
                         }
                     }
@@ -280,4 +579,12 @@ public class CrosswordSolution implements ActionListener {
             }
         }
     }
+    private boolean everycharacterisnotEmpty()
+    {
+        for(int i = 0; i < gui.getX_size(); i++)
+            for (int j = 0; j < gui.getY_size(); j++)
+                if(!gui.isBlack(i , j) && gui.getLetter(i,j)=='\0')
+                    return false;
+        return true;
+    }*/
 }

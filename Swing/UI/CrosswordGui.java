@@ -23,7 +23,7 @@ public class CrosswordGui {
     private final JLabel message = new JLabel("Crossword Puzzle");
     private int x_size,y_size;
 
-    public CrosswordGui(int x, int y, int n_copy) {
+    public CrosswordGui(int x, int y) {
         x_size=x;
         y_size=y;
 
@@ -37,10 +37,8 @@ public class CrosswordGui {
         frame.pack();
         // ensures the minimum size is enforced.
         frame.setMinimumSize(frame.getSize());
-        if( n_copy == 0 )
-            frame.setVisible(true);
-        else
-            frame.setVisible(false);
+        frame.setVisible(true);
+
 
     }
 
