@@ -14,6 +14,7 @@ public class CrosswordSolution implements ActionListener {
     private final HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
     private Stack<char[][]> crosswords;
     private Stack<ArrayList<String>> words;
+    private Stack<Integer> currentposes;
     CrosswordSolution(CrosswordGui crosswordGui) {
         gui = crosswordGui;
     }
@@ -37,12 +38,14 @@ public class CrosswordSolution implements ActionListener {
         System.out.println(gui.isUserEntered(0,1));
         System.out.println(gui.isUserEntered(1,0));
         System.out.println(gui.isUserEntered(1,1));*/
+        long start = System.currentTimeMillis();
         crosswords = new Stack<>();
         words = new Stack<>();
+        currentposes = new Stack<>();
         ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Oğuz Andaş\\IdeaProjects\\Crossword-Solver\\words3.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -66,6 +69,7 @@ public class CrosswordSolution implements ActionListener {
         changetoMatrix(guimatrix,gui);
         crosswords.push(guimatrix);
         words.push(allwords);
+        currentposes.push(0);
         char[][] solved = solve_Puzzle();
         if(solved == null) {
             gui.result("No solution found",false);
@@ -73,6 +77,9 @@ public class CrosswordSolution implements ActionListener {
             changetoGui(solved);
             gui.result("A solution is found",true);
         }
+        long end = System.currentTimeMillis();
+        float sec = (end - start) / 1000F;
+        System.out.println("All conditions searched for " + sec+ " seconds");
     }
     private char[][] solve_Puzzle()
     {
@@ -84,25 +91,19 @@ public class CrosswordSolution implements ActionListener {
         char[][] cmatrix;
         ArrayList<String> nextmap;
         ArrayList<String> cmap;
+        int current;
         outer:
         while(!crosswords.isEmpty()) {
-            while(!words.isEmpty() && words.peek().size() == 0 )
-            {
-                if (everycharacterisnotEmpty(crosswords.peek()))
-                    return crosswords.peek();
-                crosswords.pop();
-                words.pop();
-
-            }
-            if (crosswords.isEmpty())
-                break;
             cmatrix = crosswords.peek();
             cmap = words.peek();
+            current = currentposes.peek();
             for (int i = 0; i < cmatrix.length; i++) {
                 for (int j = 0; j < cmatrix[i].length; j++) {
                     if (cmatrix[i][j] != '?') {
-                        for (String name : cmap) {
-                            if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0')))) {
+                        for (;current < cmap.size(); current++) {
+                            String name = cmap.get(current);
+                            if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0'))))
+                            {
                                 //We make a copy here.
                                 boolean t1 = true, t2 = true, t3 = true, t4 = true;
                                 int value = name.length();
@@ -128,8 +129,10 @@ public class CrosswordSolution implements ActionListener {
                                 }
                                 if (everycharacterisnotEmpty(nextmatrix))
                                     return nextmatrix;
-                                cmap.remove(name);
+                                currentposes.pop();
+                                currentposes.push(current + 1);
                                 nextmap.remove(name);
+                                currentposes.push(0);
                                 words.push(nextmap);
                                 crosswords.push(nextmatrix);
                                 System.out.println(words.size() +" WORDS AND CROSSWORDS SIZES " + crosswords.size() );
@@ -142,16 +145,7 @@ public class CrosswordSolution implements ActionListener {
             }
             crosswords.pop();
             words.pop();
-
-
-            /*crosswords.pop();
-            words.pop();
-            gtemp = crosswords.pop();
-            tmap = words.pop();
-            copyGui(gtemp,crosswords.peek());
-            copyMap(tmap, words.peek());
-            crosswords.push(gtemp);
-            words.push(tmap);*/
+            currentposes.pop();
         }
         return null;
     }

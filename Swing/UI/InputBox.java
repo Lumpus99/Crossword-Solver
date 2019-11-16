@@ -1,6 +1,5 @@
 package Swing.UI;
 
-import javafx.scene.control.TextFormatter;
 
 import java.awt.*;
 import java.awt.event.WindowEvent;
