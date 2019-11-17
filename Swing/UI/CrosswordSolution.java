@@ -11,7 +11,7 @@ import java.io.*;
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
-    private final HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
+    private HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
     private Stack<char[][]> crosswords;
     private Stack<ArrayList<String>> words;
     private Stack<Integer> currentposes;
@@ -42,10 +42,11 @@ public class CrosswordSolution implements ActionListener {
         crosswords = new Stack<>();
         words = new Stack<>();
         currentposes = new Stack<>();
+        WORDS_MAP = new HashMap<>();
         ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words3.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -96,11 +97,10 @@ public class CrosswordSolution implements ActionListener {
         while(!crosswords.isEmpty()) {
             cmatrix = crosswords.peek();
             cmap = words.peek();
-            current = currentposes.peek();
             for (int i = 0; i < cmatrix.length; i++) {
                 for (int j = 0; j < cmatrix[i].length; j++) {
                     if (cmatrix[i][j] != '?') {
-                        for (;current < cmap.size(); current++) {
+                        for (current = currentposes.peek(); current < cmap.size(); current++) {
                             String name = cmap.get(current);
                             if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0'))))
                             {
@@ -108,9 +108,9 @@ public class CrosswordSolution implements ActionListener {
                                 boolean t1 = true, t2 = true, t3 = true, t4 = true;
                                 int value = name.length();
                                 nextmatrix = new char[gui.getX_size()][gui.getY_size()];
-                                copyGui(nextmatrix, crosswords.peek());
+                                copyGui(nextmatrix, cmatrix);
                                 nextmap = new ArrayList<>();
-                                copyMap(nextmap, words.peek());
+                                copyMap(nextmap, cmap);
                                 t1 = canbeFilled(i, j, -1, value ,nextmatrix);
                                 t2 = canbeFilled(i, j, 0, value ,nextmatrix);
                                 if (!(t1 || t2)) {
@@ -119,9 +119,9 @@ public class CrosswordSolution implements ActionListener {
                                     continue;
                                 }
                                 if (t1)
-                                    t3 = fillGrid(i, j, -1, name, nextmatrix);
+                                    t3 = fillGrid(i, j, -1, name, nextmatrix, nextmap);
                                 else
-                                    t4 = fillGrid(i, j, 0, name, nextmatrix);
+                                    t4 = fillGrid(i, j, 0, name, nextmatrix, nextmap);
                                 if (!(t3 || t4)) {
                                     nextmap = null;
                                     nextmatrix = null;
@@ -130,14 +130,16 @@ public class CrosswordSolution implements ActionListener {
                                 if (everycharacterisnotEmpty(nextmatrix))
                                     return nextmatrix;
                                 currentposes.pop();
-                                currentposes.push(current + 1);
+                                current++;
+                                currentposes.push(current);
                                 nextmap.remove(name);
                                 currentposes.push(0);
                                 words.push(nextmap);
                                 crosswords.push(nextmatrix);
-                                System.out.println(words.size() +" WORDS AND CROSSWORDS SIZES " + crosswords.size() );
+                                //System.out.println(words.size() +" WORDS AND POS "+ currentposes.size() +" CROSSWORDS SIZES " + crosswords.size() ); printmatrix(nextmatrix);
                                 continue outer;
                                 //return solve_Puzzle(cgui);
+
                             }
                         }
                     }
@@ -148,6 +150,13 @@ public class CrosswordSolution implements ActionListener {
             currentposes.pop();
         }
         return null;
+    }
+    private void printmatrix(char[][] matrix){
+        for(int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++)
+                System.out.print(matrix[i][j]);
+            System.out.println();
+        }
     }
     private boolean canbeFilled(int x, int y, int xory, int value, char[][] nextmatrix)
     {
@@ -173,7 +182,7 @@ public class CrosswordSolution implements ActionListener {
         }
         return t;
     }
-    private boolean fillGrid(int x, int y, int xory, String name, char[][] nextmatrix)
+    private boolean fillGrid(int x, int y, int xory, String name, char[][] nextmatrix,ArrayList<String> nextmap)
     {
         int[] marker = new int[name.length()];
         if(xory == -1){ // we fill for y
@@ -208,31 +217,13 @@ public class CrosswordSolution implements ActionListener {
                 }
                 if (j < nextmatrix.length && nextmatrix[j][i] != '?' && nextmatrix[j][i] == '\0')
                     empty = 1;
-                if(!WORDS_MAP.containsKey(word) && !word.equals(""))
-                {
-                    if (empty == 1) {
-                        boolean t = false;
-                        for (String keys : WORDS_MAP.keySet()) {
-                            t = true;
-                            for (int e = 0; e < word.length(); e++) {
-                                if (WORDS_MAP.get(keys) < word.length() || keys.charAt(e) != word.charAt(e)) {
-                                    t = false;
-                                    break;
-                                }
-                            }
-                            if (t)
-                                break;
-                        }
-                        if (!t) {
-                            clearWord(z, x, y, marker, count, xory,nextmatrix);
-                            return false;
-                        }
-                    }
-                    else {
-                        clearWord(z ,x, y, marker, count, xory,nextmatrix);
+                if(!WORDS_MAP.containsKey(word) && !word.equals("")) {
+                    if (!containsorassub(z, y, x, marker, count, xory, nextmatrix, empty, word, name))
                         return false;
-                    }
                 }
+                else if(!word.equals(""))
+                    nextmap.remove(word);
+
             }
         }
         else{ // we fill for x
@@ -267,31 +258,12 @@ public class CrosswordSolution implements ActionListener {
                 }
                 if (j < nextmatrix[x].length && nextmatrix[i][j] != '?' && nextmatrix[i][j] == '\0')
                     empty = 1;
-                if(!WORDS_MAP.containsKey(word) && !word.equals(""))
-                {
-                    if (empty == 1) {
-                        boolean t = false;
-                        for (String keys : WORDS_MAP.keySet()) {
-                            t = true;
-                            for (int e = 0; e < word.length(); e++) {
-                                if (WORDS_MAP.get(keys) < word.length() || keys.charAt(e) != word.charAt(e)) {
-                                    t = false;
-                                    break;
-                                }
-                            }
-                            if (t)
-                                break;
-                        }
-                        if (!t) {
-                            clearWord(z, x, y, marker, count, xory ,nextmatrix);
-                            return false;
-                        }
-                    }
-                    else {
-                        clearWord(z ,x, y, marker, count, xory,nextmatrix);
+                if(!WORDS_MAP.containsKey(word) && !word.equals("")) {
+                    if (!containsorassub(z, y, x, marker, count, xory, nextmatrix, empty, word, name))
                         return false;
-                    }
                 }
+                else if(!word.equals(""))
+                    nextmap.remove(word);
             }
         }
         return true;
@@ -317,6 +289,41 @@ public class CrosswordSolution implements ActionListener {
                 count--;
             }
         }
+    }
+    private boolean containsorassub(int z, int y, int x,int[] marker, int count, int xory, char[][] nextmatrix,int empty,String word,String name)
+    {
+        if (empty == 1) {
+            boolean t = false, f;
+            for (String keys : WORDS_MAP.keySet()) {
+                if(!name.equals(keys)) {
+                    t = true;
+                    f = false;
+                    for (int e = 0; e < word.length(); e++) {
+                        if (WORDS_MAP.get(keys) >= word.length() && keys.charAt(e) != word.charAt(e)) {
+                            t = false;
+                            break;
+                        }
+                        if (!f && WORDS_MAP.get(keys) < word.length())
+                            f = false;
+                        else
+                            f = true;
+                    }
+                    if (t && f)
+                        break;
+                }
+            }
+            if (!t) {
+                //System.out.println("Deleted because cannot its substring");
+                clearWord(z, x, y, marker, count, xory,nextmatrix);
+                return false;
+            }
+        }
+        else {
+            //System.out.println("Deleted because cannot be as substring");
+            clearWord(z ,x, y, marker, count, xory,nextmatrix);
+            return false;
+        }
+        return true;
     }
     private boolean everycharacterisnotEmpty(char[][] nextmatrix)
     {
