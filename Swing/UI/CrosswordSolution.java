@@ -84,13 +84,9 @@ public class CrosswordSolution implements ActionListener {
     }
     private char[][] solve_Puzzle()
     {
-        /*if(everycharacterisnotEmpty(gui))
-            return gui;
-        if(WORDS_MAP.isEmpty())
-            return null;*/
-        char[][] nextmatrix;
+        char[][] vnextmatrix,hnextmatrix ;
         char[][] cmatrix;
-        ArrayList<String> nextmap;
+        ArrayList<String> vnextmap, hnextmap;
         ArrayList<String> cmap;
         int current;
         outer:
@@ -107,39 +103,59 @@ public class CrosswordSolution implements ActionListener {
                                 //We make a copy here.
                                 boolean t1 = true, t2 = true, t3 = true, t4 = true;
                                 int value = name.length();
-                                nextmatrix = new char[gui.getX_size()][gui.getY_size()];
-                                copyGui(nextmatrix, cmatrix);
-                                nextmap = new ArrayList<>();
-                                copyMap(nextmap, cmap);
-                                t1 = canbeFilled(i, j, -1, value ,nextmatrix);
-                                t2 = canbeFilled(i, j, 0, value ,nextmatrix);
+                                vnextmatrix = new char[gui.getX_size()][gui.getY_size()];
+                                copyGui(vnextmatrix, cmatrix);
+                                hnextmatrix = new char[gui.getX_size()][gui.getY_size()];
+                                copyGui(hnextmatrix, cmatrix);
+                                vnextmap = new ArrayList<>();
+                                copyMap(vnextmap, cmap);
+                                hnextmap = new ArrayList<>();
+                                copyMap(hnextmap, cmap);
+                                t1 = canbeFilled(i, j, -1, value ,hnextmatrix);
+                                t2 = canbeFilled(i, j, 0, value ,vnextmatrix);
                                 if (!(t1 || t2)) {
-                                    nextmap = null;
-                                    nextmatrix = null;
+                                    vnextmap = null;
+                                    vnextmatrix = null;
+                                    hnextmatrix = null;
+                                    hnextmap = null;
                                     continue;
                                 }
                                 if (t1)
-                                    t3 = fillGrid(i, j, -1, name, nextmatrix, nextmap);
-                                else
-                                    t4 = fillGrid(i, j, 0, name, nextmatrix, nextmap);
+                                    t3 = fillGrid(i, j, -1, name, hnextmatrix, hnextmap);
+                                if (t2)
+                                    t4 = fillGrid(i, j, 0, name, vnextmatrix, vnextmap);
                                 if (!(t3 || t4)) {
-                                    nextmap = null;
-                                    nextmatrix = null;
+                                    vnextmap = null;
+                                    vnextmatrix = null;
+                                    hnextmatrix = null;
+                                    hnextmap = null;
                                     continue;
                                 }
-                                if (everycharacterisnotEmpty(nextmatrix))
-                                    return nextmatrix;
+                                if (everycharacterisnotEmpty(vnextmatrix))
+                                    return vnextmatrix;
+                                if (everycharacterisnotEmpty(hnextmatrix))
+                                    return hnextmatrix;
                                 currentposes.pop();
-                                current++;
-                                currentposes.push(current);
-                                nextmap.remove(name);
-                                currentposes.push(0);
-                                words.push(nextmap);
-                                crosswords.push(nextmatrix);
-                                //System.out.println(words.size() +" WORDS AND POS "+ currentposes.size() +" CROSSWORDS SIZES " + crosswords.size() ); printmatrix(nextmatrix);
+                                currentposes.push(current + 1);
+                                if(t3) {
+                                    hnextmap.remove(name);
+                                    currentposes.push(0);
+                                    words.push(hnextmap);
+                                    crosswords.push(hnextmatrix);
+                                }
+                                if(t4) {
+                                    vnextmap.remove(name);
+                                    currentposes.push(0);
+                                    words.push(vnextmap);
+                                    crosswords.push(vnextmatrix);
+                                }
+                                if (t3 && t4 && name.length() == 1)
+                                {
+                                    crosswords.pop();
+                                    words.pop();
+                                    currentposes.pop();
+                                }
                                 continue outer;
-                                //return solve_Puzzle(cgui);
-
                             }
                         }
                     }
@@ -151,13 +167,13 @@ public class CrosswordSolution implements ActionListener {
         }
         return null;
     }
-    private void printmatrix(char[][] matrix){
+    /*private void printmatrix(char[][] matrix){
         for(int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++)
                 System.out.print(matrix[i][j]);
             System.out.println();
         }
-    }
+    }*/
     private boolean canbeFilled(int x, int y, int xory, int value, char[][] nextmatrix)
     {
         boolean t = true;
@@ -217,13 +233,16 @@ public class CrosswordSolution implements ActionListener {
                 }
                 if (j < nextmatrix.length && nextmatrix[j][i] != '?' && nextmatrix[j][i] == '\0')
                     empty = 1;
-                if(!WORDS_MAP.containsKey(word) && !word.equals("")) {
-                    if (!containsorassub(z, y, x, marker, count, xory, nextmatrix, empty, word, name))
+                if(empty == 0) {
+                    if (!WORDS_MAP.containsKey(word) && !word.equals("")) {
+                        clearWord(z, x, y, marker, count, xory, nextmatrix);
+                        return false;
+                    }
+                }
+                else{
+                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name))
                         return false;
                 }
-                else if(!word.equals(""))
-                    nextmap.remove(word);
-
             }
         }
         else{ // we fill for x
@@ -258,12 +277,16 @@ public class CrosswordSolution implements ActionListener {
                 }
                 if (j < nextmatrix[x].length && nextmatrix[i][j] != '?' && nextmatrix[i][j] == '\0')
                     empty = 1;
-                if(!WORDS_MAP.containsKey(word) && !word.equals("")) {
-                    if (!containsorassub(z, y, x, marker, count, xory, nextmatrix, empty, word, name))
+                if(empty == 0) {
+                    if (!WORDS_MAP.containsKey(word) && !word.equals("")) {
+                        clearWord(z, x, y, marker, count, xory, nextmatrix);
+                        return false;
+                    }
+                }
+                else{
+                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name))
                         return false;
                 }
-                else if(!word.equals(""))
-                    nextmap.remove(word);
             }
         }
         return true;
@@ -290,37 +313,29 @@ public class CrosswordSolution implements ActionListener {
             }
         }
     }
-    private boolean containsorassub(int z, int y, int x,int[] marker, int count, int xory, char[][] nextmatrix,int empty,String word,String name)
+    private boolean containsorassub(int z, int y, int x,int[] marker, int count, int xory, char[][] nextmatrix,String word,String name)
     {
-        if (empty == 1) {
-            boolean t = false, f;
-            for (String keys : WORDS_MAP.keySet()) {
-                if(!name.equals(keys)) {
-                    t = true;
+        boolean t = false, f;
+        for (String keys : WORDS_MAP.keySet()) {
+            if(!name.equals(keys)) {
+                t = true;
+                f = false;
+                if (WORDS_MAP.get(keys) < word.length())
                     f = false;
-                    for (int e = 0; e < word.length(); e++) {
-                        if (WORDS_MAP.get(keys) >= word.length() && keys.charAt(e) != word.charAt(e)) {
-                            t = false;
-                            break;
-                        }
-                        if (!f && WORDS_MAP.get(keys) < word.length())
-                            f = false;
-                        else
-                            f = true;
-                    }
-                    if (t && f)
+                else
+                    f = true;
+                for (int e = 0; e < word.length(); e++) {
+                    if (WORDS_MAP.get(keys) >= word.length() && keys.charAt(e) != word.charAt(e)) {
+                        t = false;
                         break;
+                    }
                 }
-            }
-            if (!t) {
-                //System.out.println("Deleted because cannot its substring");
-                clearWord(z, x, y, marker, count, xory,nextmatrix);
-                return false;
+                if (t && f)
+                    break;
             }
         }
-        else {
-            //System.out.println("Deleted because cannot be as substring");
-            clearWord(z ,x, y, marker, count, xory,nextmatrix);
+        if (!t) {
+            clearWord(z, x, y, marker, count, xory,nextmatrix);
             return false;
         }
         return true;
