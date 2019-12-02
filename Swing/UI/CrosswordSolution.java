@@ -12,9 +12,11 @@ public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
     private final List<String> WORDS = new ArrayList<>();
-    private Stack<char[][]> states = new Stack<>();
-    private static final boolean VERTICAL = true;
-    private static final boolean HORIZONTAL = false;
+    private Stack<CrosswordState> states = new Stack<>();
+    private static final int VERTICAL = 0;
+    private static final int HORIZONTAL = 1;
+    private static final int VERTICAL_AND_HORIZONTAL = 2;
+
 
 
 
@@ -60,10 +62,24 @@ public class CrosswordSolution implements ActionListener {
         }
     }
 
-    private char[][] insertWord(char[][] state, String word, int x, int y, boolean type){
+    private boolean solve(char[][] arr){
+        for(int i = 1; i < arr.length - 1; i++) {
+            for(int j = 1; j < arr[i].length - 1; j++) {
+                if(isStartofWord(arr,i,j)){
+                    //CrosswordState crosswordState = new CrosswordState();
+                    //List list = getSuitableWords();
+                   // int type = verticalOrHorizontal(arr,);
+
+                }
+            }
+        }
+        return false;
+    }
+
+    private char[][] insertWord(char[][] state, String word, int x, int y, int type){
         if(getSpaceLength(state,x,y,type)!=word.length())
             return null;
-        if(type = CrosswordSolution.HORIZONTAL) {
+        if(type == CrosswordSolution.HORIZONTAL) {
             for (int counter = 0; state[x+counter][y] != '$'; counter++){
                 state[x+counter][y] = word.charAt(counter);
             }
@@ -75,7 +91,7 @@ public class CrosswordSolution implements ActionListener {
         return state;
     }
     //İlk harfinin x ve y koordinatlarını alıyor ve sığabilecek kelime büyüklüğünü veriyor
-    private int getSpaceLength(char[][] state, int x, int y, boolean type){
+    private int getSpaceLength(char[][] state, int x, int y, int type){
         int counter;
         if(type == CrosswordSolution.HORIZONTAL) {
             for (counter = 0; state[x+counter][y] != '$'; counter++);
@@ -83,6 +99,28 @@ public class CrosswordSolution implements ActionListener {
             for (counter = 0; state[x][y+counter] != '$'; counter++);
         }
         return counter;
+    }
+    private boolean isStartofWord(char[][] state,  int x, int y){
+        if(state[x][y] == '$')
+            return false;
+        return (state[x+1][y]=='$'||state[x][y-1]!= '$');
+
+    }
+
+    //TODO icini doldur
+    private List<String> getSuitableWords(char[][] state,int x, int y){
+        return null;
+    }
+
+    //Yanlış çalışıyor
+    //TODO Duzelt
+    private int verticalOrHorizontal(char[][] state,  int x, int y){
+        if(state[x+1][y] != '$'||state[x-1][y]!= '$'){
+            return CrosswordSolution.HORIZONTAL;
+        }else if(state[x][y+1] != '$'||state[x][y-1]!= '$'){
+            return CrosswordSolution.VERTICAL;
+        }
+        return CrosswordSolution.HORIZONTAL; //bir uzunluklu kelime
     }
     /*
     private char[][] solve_Puzzle()
