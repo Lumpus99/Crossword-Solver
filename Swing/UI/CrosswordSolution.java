@@ -3,6 +3,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 import java.util.HashMap;
 import java.io.*;
@@ -10,52 +11,80 @@ import java.io.*;
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
-    private HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
-    private Stack<char[][]> crosswords;
-    private Stack<ArrayList<String>> words;
-    private Stack<Integer> currentposes;
+    private final List<String> WORDS = new ArrayList<>();
+    private Stack<char[][]> states = new Stack<>();
+    private static final boolean VERTICAL = true;
+    private static final boolean HORIZONTAL = false;
+
+
+
     CrosswordSolution(CrosswordGui crosswordGui) {
         gui = crosswordGui;
     }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         long start = System.currentTimeMillis();
-        crosswords = new Stack<>();
-        words = new Stack<>();
-        currentposes = new Stack<>();
-        WORDS_MAP = new HashMap<>();
-        ArrayList<String> allwords = new ArrayList<>();
+
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
+            br = new BufferedReader(new FileReader("D:\\Crossword-Tests\\Test1\\words2.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
+            return;
         }
-        String line = "";
         try {
-                while ((line=br.readLine()) != null) {
-                    WORDS_MAP.put(line, line.length());
-                    allwords.add(line);
+            String line;
+            while ((line=br.readLine()) != null) {
+                    WORDS.add(line);
                 }
         } catch (IOException ex) {
                 ex.printStackTrace();
+                return;
         }
-        char[][] guimatrix = new char[gui.getX_size()][gui.getY_size()];
-        changetoMatrix(guimatrix,gui);
-        crosswords.push(guimatrix);
-        words.push(allwords);
-        currentposes.push(0);
-        char[][] solved = solve_Puzzle();
-        if(solved == null) {
-            gui.result("No solution found",false);
-        }else {
-            changetoGui(solved);
-            gui.result("A solution is found",true);
-        }
+
+        initialize();
         long end = System.currentTimeMillis();
         float sec = (end - start) / 1000F;
         System.out.println("All conditions searched for " + sec+ " seconds");
     }
+    private void initialize(){
+        char[][] initial = new char[gui.getX_size()+2][gui.getY_size()+2];
+        for(int i = 0; i < initial.length; i++) {
+            for(int j = 0; j < initial[i].length; j++) {
+                if(i == 0|| j==0|| i==gui.getX_size()+1||j==gui.getY_size()+1){
+                    initial[i][j]='$';
+                }else if(i < gui.getX_size()&&j < gui.getY_size() && gui.isBlack(i-1,j-1))
+                    initial[i][j]='$';
+            }
+        }
+    }
+
+    private char[][] insertWord(char[][] state, String word, int x, int y, boolean type){
+        if(getSpaceLength(state,x,y,type)!=word.length())
+            return null;
+        if(type = CrosswordSolution.HORIZONTAL) {
+            for (int counter = 0; state[x+counter][y] != '$'; counter++){
+                state[x+counter][y] = word.charAt(counter);
+            }
+        }else{
+            for (int counter = 0; state[x][y+counter] != '$'; counter++){
+                state[x][y+counter] = word.charAt(counter);
+            }
+        }
+        return state;
+    }
+    //İlk harfinin x ve y koordinatlarını alıyor ve sığabilecek kelime büyüklüğünü veriyor
+    private int getSpaceLength(char[][] state, int x, int y, boolean type){
+        int counter;
+        if(type == CrosswordSolution.HORIZONTAL) {
+            for (counter = 0; state[x+counter][y] != '$'; counter++);
+        }else{
+            for (counter = 0; state[x][y+counter] != '$'; counter++);
+        }
+        return counter;
+    }
+    /*
     private char[][] solve_Puzzle()
     {
         if(!lookforonewords())
@@ -382,4 +411,5 @@ public class CrosswordSolution implements ActionListener {
             for (int j = 0; j < copiedone[i].length; j++)
                 copied[i][j] = copiedone[i][j];
     }
+    */
 }
