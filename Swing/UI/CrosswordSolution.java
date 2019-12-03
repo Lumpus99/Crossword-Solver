@@ -24,10 +24,7 @@ public class CrosswordSolution implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        char[][] asd = new char[2][2];
-        asd[0][0] = '1';
-        test(asd);
-        System.out.println(asd[0][0]);
+
         long start = System.currentTimeMillis();
 
         BufferedReader br = null;
@@ -60,10 +57,6 @@ public class CrosswordSolution implements ActionListener {
         long end = System.currentTimeMillis();
         float sec = (end - start) / 1000F;
         System.out.println("All conditions searched for " + sec + " seconds");
-    }
-    private char[][] test(char[][] asd){
-        asd[0][0] ='k';
-        return asd;
     }
     private char[][] initialize() {
         char[][] initial = new char[gui.getX_size() + 2][gui.getY_size() + 2];
