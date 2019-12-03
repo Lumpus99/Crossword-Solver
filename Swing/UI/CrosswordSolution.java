@@ -11,8 +11,8 @@ import java.io.*;
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
-    private final List<String> WORDS = new ArrayList<>();
-    private Stack<char[][]> states = new Stack<>();
+    private List<String> WORDS;
+    private Stack<char[][]> states;
     private static final boolean VERTICAL = true;
     private static final boolean HORIZONTAL = false;
 
@@ -25,10 +25,11 @@ public class CrosswordSolution implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         long start = System.currentTimeMillis();
-
+        states = new Stack<>();
+        WORDS = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("D:\\Crossword-Tests\\Test1\\words2.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
             return;
@@ -63,7 +64,7 @@ public class CrosswordSolution implements ActionListener {
     private char[][] insertWord(char[][] state, String word, int x, int y, boolean type){
         if(getSpaceLength(state,x,y,type)!=word.length())
             return null;
-        if(type = CrosswordSolution.HORIZONTAL) {
+        if(type == CrosswordSolution.HORIZONTAL) {
             for (int counter = 0; state[x+counter][y] != '$'; counter++){
                 state[x+counter][y] = word.charAt(counter);
             }
