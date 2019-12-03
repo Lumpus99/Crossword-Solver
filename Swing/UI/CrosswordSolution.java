@@ -4,17 +4,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
-import java.util.HashMap;
+import java.util.*;
 import java.io.*;
+import java.util.List;
 
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
     private final List<String> WORDS = new ArrayList<>();
-    private Stack<CrosswordState> states = new Stack<>();
     private static final int NOT_A_HEAD = -1;
     private static final int VERTICAL = 0;
     private static final int HORIZONTAL = 1;
@@ -27,6 +24,7 @@ public class CrosswordSolution implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
         long start = System.currentTimeMillis();
 
         BufferedReader br = null;
@@ -60,14 +58,13 @@ public class CrosswordSolution implements ActionListener {
         float sec = (end - start) / 1000F;
         System.out.println("All conditions searched for " + sec + " seconds");
     }
-
     private char[][] initialize() {
         char[][] initial = new char[gui.getX_size() + 2][gui.getY_size() + 2];
         for (int i = 0; i < initial.length; i++) {
             for (int j = 0; j < initial[i].length; j++) {
                 if (i == 0 || j == 0 || i == gui.getX_size() + 1 || j == gui.getY_size() + 1) {
                     initial[i][j] = '$';
-                } else if (i < gui.getX_size() && j < gui.getY_size() && gui.isBlack(i - 1, j - 1)) {
+                } else if (i <= gui.getX_size() && j <= gui.getY_size() && gui.isBlack(i - 1, j - 1)) {
                     initial[i][j] = '$';
                 } else if (i < gui.getX_size() && j < gui.getY_size() && gui.isUserEntered(i - 1, j - 1)) {
                     initial[i][j] = gui.getLetter(i - 1, j - 1);
@@ -109,12 +106,12 @@ public class CrosswordSolution implements ActionListener {
 
                 possible_words_v = getSuitableWords(current_puzzle, heads.get(0).x, heads.get(0).y, CrosswordSolution.VERTICAL);
                 if (!possible_words_v.isEmpty())
-                    current_puzzle = insertWord(current_puzzle, possible_words_h.get(0), heads.get(0).x, heads.get(0).y, CrosswordSolution.VERTICAL);
+                    current_puzzle = insertWord(current_puzzle, possible_words_v.get(0), heads.get(0).x, heads.get(0).y, CrosswordSolution.VERTICAL);
                 backtrack = true;
             } while (possible_words_v.isEmpty());
 
-            CrosswordState crosswordState_h = new CrosswordState(current_puzzle, possible_words_h, heads.get(0), CrosswordSolution.HORIZONTAL);
-            CrosswordState crosswordState_v = new CrosswordState(current_puzzle, possible_words_v, heads.get(0), CrosswordSolution.VERTICAL);
+            CrosswordState crosswordState_h = new CrosswordState(copyOf(current_puzzle), possible_words_h, heads.get(0), CrosswordSolution.HORIZONTAL);
+            CrosswordState crosswordState_v = new CrosswordState(copyOf(current_puzzle), possible_words_v, heads.get(0), CrosswordSolution.VERTICAL);
             state_stack.push(crosswordState_h);
             state_stack.push(crosswordState_v);
         }
@@ -123,11 +120,14 @@ public class CrosswordSolution implements ActionListener {
             if (possible_words.isEmpty())
                 return null;
             current_puzzle = insertWord(current_puzzle, possible_words.get(0), heads.get(0).x, heads.get(0).y, type);
-            CrosswordState crosswordState = new CrosswordState(current_puzzle, possible_words, heads.get(0), type);
+            CrosswordState crosswordState = new CrosswordState(copyOf(current_puzzle), possible_words, heads.get(0), type);
             state_stack.push(crosswordState);
         }
 
         for (int count = 1;; count++) {
+            if(state_stack.isEmpty())
+                return null;
+            print(state_stack.peek().getBoard());
             if (count == heads.size()) {
                 return state_stack.peek().getBoard();
             }
@@ -144,10 +144,10 @@ public class CrosswordSolution implements ActionListener {
                         return null;
 
                     state_stack.peek().remove_One();
-                    count = heads.indexOf(states.peek().getPoint()) - 1;
+                    count = heads.indexOf(state_stack.peek().getPoint()) - 1;
                 } else {
                     char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words.get(0), heads.get(count).x, heads.get(count).y, head_type);
-                    CrosswordState newState = new CrosswordState(newBoard, head_possible_words, heads.get(count), head_type);
+                    CrosswordState newState = new CrosswordState(copyOf(newBoard), head_possible_words, heads.get(count), head_type);
                     state_stack.push(newState);
                 }
             }else if(head_type == CrosswordSolution.VERTICAL_AND_HORIZONTAL){
@@ -158,10 +158,10 @@ public class CrosswordSolution implements ActionListener {
                         return null;
 
                     state_stack.peek().remove_One();
-                    count = heads.indexOf(states.peek().getPoint()) - 1;
+                    count = heads.indexOf(state_stack.peek().getPoint()) - 1;
                 } else {
                     char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words_h.get(0), heads.get(count).x, heads.get(count).y, CrosswordSolution.HORIZONTAL);
-                    CrosswordState newState = new CrosswordState(newBoard, head_possible_words_h, heads.get(count), CrosswordSolution.HORIZONTAL);
+                    CrosswordState newState = new CrosswordState(copyOf(newBoard), head_possible_words_h, heads.get(count), CrosswordSolution.HORIZONTAL);
                     state_stack.push(newState);
                 }
                 List<String> head_possible_words_v = getSuitableWords(currentState.getBoard(), heads.get(count).x, heads.get(count).y, CrosswordSolution.VERTICAL);
@@ -171,10 +171,10 @@ public class CrosswordSolution implements ActionListener {
                         return null;
 
                     state_stack.peek().remove_One();
-                    count = heads.indexOf(states.peek().getPoint()) - 1;
+                    count = heads.indexOf(state_stack.peek().getPoint()) - 1;
                 } else {
-                    char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words_h.get(0), heads.get(count).x, heads.get(count).y, CrosswordSolution.VERTICAL);
-                    CrosswordState newState = new CrosswordState(newBoard, head_possible_words_h, heads.get(count), CrosswordSolution.VERTICAL);
+                    char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words_v.get(0), heads.get(count).x, heads.get(count).y, CrosswordSolution.VERTICAL);
+                    CrosswordState newState = new CrosswordState(copyOf(newBoard), head_possible_words_v, heads.get(count), CrosswordSolution.VERTICAL);
                     state_stack.push(newState);
                 }
             }else{
@@ -186,7 +186,7 @@ public class CrosswordSolution implements ActionListener {
     private char[][] insertWord(char[][] state, String word, int x, int y, int type) {
         if (getSpaceLength(state, x, y, type) != word.length())
             return null;
-        if (type == CrosswordSolution.HORIZONTAL) {
+        if (type == CrosswordSolution.VERTICAL) {
             for (int counter = 0; state[x + counter][y] != '$'; counter++) {
                 if (!Character.isUpperCase(state[x + counter][y]))
                     state[x + counter][y] = word.charAt(counter);
@@ -203,7 +203,7 @@ public class CrosswordSolution implements ActionListener {
     //İlk harfinin x ve y koordinatlarını alıyor ve sığabilecek kelime büyüklüğünü veriyor
     private int getSpaceLength(char[][] state, int x, int y, int type) {
         int counter;
-        if (type == CrosswordSolution.HORIZONTAL) {
+        if (type == CrosswordSolution.VERTICAL) {
             for (counter = 0; state[x + counter][y] != '$'; counter++) ;
         } else {
             for (counter = 0; state[x][y + counter] != '$'; counter++) ;
@@ -219,6 +219,7 @@ public class CrosswordSolution implements ActionListener {
     }
 
     private Stack<CrosswordState> backtrack(Stack<CrosswordState> state_stack){
+        System.out.println("Backtrack");
         while (true) {
             if (state_stack.isEmpty())
                 return null;
@@ -228,6 +229,12 @@ public class CrosswordSolution implements ActionListener {
                 return state_stack;
         }
     }
+    public static char[][] copyOf(char[][] original) {
+        char [][] newArr = new char[original.length][];
+        for(int i = 0; i < original.length; i++)
+            newArr[i] = original[i].clone();
+        return newArr;
+    }
     /* private static final int NOT_A_HEAD = -1;
     private static final int VERTICAL = 0;
     private static final int HORIZONTAL = 1;
@@ -235,10 +242,10 @@ public class CrosswordSolution implements ActionListener {
     //TODO icini doldur
     private List<Point> getSpaceList (char[][] state){
         List<Point> pospoints = new ArrayList<>();
-        for (int i = 1; i < state.length - 1; i++) {
-            for (int j = 1; j < state[i].length - 1; j++) {
+        for (int i = 1; i < state.length; i++) {
+            for (int j = 1; j < state[i].length; j++) {
                 int availability = verticalOrHorizontal(state, i, j);
-                if (availability != CrosswordSolution.VERTICAL_AND_HORIZONTAL) {
+                if (availability != CrosswordSolution.NOT_A_HEAD) {
                     Point point = new Point(i,j);
                     pospoints.add(point);
                 }
@@ -249,12 +256,6 @@ public class CrosswordSolution implements ActionListener {
     //TODO icini doldur
     private List<String> getSuitableWords(char[][] state, int x, int y, int type){
         List<String> poswords = new ArrayList<>();
-        if(type == CrosswordSolution.VERTICAL_AND_HORIZONTAL){
-            lookforwords(state, x, y, poswords, HORIZONTAL);
-            lookforwords(state, x, y, poswords, VERTICAL);
-            return poswords;
-
-        }
         if(type == CrosswordSolution.HORIZONTAL)
             lookforwords(state, x, y, poswords, HORIZONTAL);
         else if(type == CrosswordSolution.VERTICAL)
@@ -292,15 +293,29 @@ public class CrosswordSolution implements ActionListener {
     }
     //TODO icini doldur
     private int verticalOrHorizontal(char[][] state,  int x, int y){
+        if(state[x][y] == '$')
+            return CrosswordSolution.NOT_A_HEAD;
         if (state[x][y] == '$' || (state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y + 1] != '$' && state[x][y - 1] != '$') || (state[x][y - 1] == '$' && state[x][y + 1] == '$' && state[x - 1][y] != '$' && state[x + 1][y] != '$'))
             return CrosswordSolution.NOT_A_HEAD;
         if (state[x - 1][y] == '$' && state[x][y - 1] == '$' && state[x + 1][y] != '$' && state[x][y + 1] != '$')
             return CrosswordSolution.VERTICAL_AND_HORIZONTAL;
         if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] != '$'))
-            return CrosswordSolution.VERTICAL;
-        if (state[x - 1][y] == '$' && state[x + 1][y] != '$')
             return CrosswordSolution.HORIZONTAL;
+        if (state[x - 1][y] == '$' && state[x + 1][y] != '$')
+            return CrosswordSolution.VERTICAL;
         return -1;
+    }
+    private void print(char[][] state){
+        for(int i=0; i<state.length; i++) {
+            for(int j=0; j<state[i].length; j++) {
+                if(state[i][j] == '\0')
+                    System.out.print(" ");
+                else
+                    System.out.print(state[i][j]);
+            }
+            System.out.println();
+        }
+        System.out.println("--------");
     }
     /*
     private char[][] solve_Puzzle()
