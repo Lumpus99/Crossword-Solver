@@ -216,7 +216,7 @@ public class CrosswordSolution implements ActionListener {
         for (int i = 1; i < state.length - 1; i++) {
             for (int j = 1; j < state[i].length - 1; j++) {
                 int availability = verticalOrHorizontal(state, i, j);
-                if (availability == 0 || availability == 1 || availability == 2) {
+                if (availability != CrosswordSolution.VERTICAL_AND_HORIZONTAL) {
                     Point point = new Point(i,j);
                     pospoints.add(point);
                 }
@@ -227,19 +227,56 @@ public class CrosswordSolution implements ActionListener {
     //TODO icini doldur
     private List<String> getSuitableWords(char[][] state, int x, int y, int type){
         List<String> poswords = new ArrayList<>();
-        if(type == CrosswordSolution.HORIZONTAL)
+        if(type == CrosswordSolution.VERTICAL_AND_HORIZONTAL){
+            lookforwords(state, x, y, poswords, HORIZONTAL);
+            lookforwords(state, x, y, poswords, VERTICAL);
+            return poswords;
 
+        }
+        if(type == CrosswordSolution.HORIZONTAL)
+            lookforwords(state, x, y, poswords, HORIZONTAL);
+        else if(type == CrosswordSolution.VERTICAL)
+            lookforwords(state, x, y, poswords, VERTICAL);
         return poswords;
+    }
+    private void lookforwords(char[][] state, int x, int y, List<String> poswords, int vertical) {
+        for(String name : WORDS) {
+            if (state[x][y] == '\0' || (state[x][y] != '$' && (state[x][y] + "").equalsIgnoreCase(name.charAt(0) + ""))) {
+                int count = getSpaceLength(state, x, y, vertical);
+                if (count == name.length()) {
+                    boolean t = true;
+                    count = 0;
+                    if(vertical == CrosswordSolution.HORIZONTAL)
+                        for(int j = y; state[x][j] != '$'; j++) {
+                            if (state[x][j] != '\0' && !(state[x][j] + "").equalsIgnoreCase(name.charAt(count) + "")) {
+                                t = false;
+                                break;
+                            }
+                            count++;
+                        }
+                    else if(vertical == CrosswordSolution.VERTICAL)
+                        for(int i = x; state[i][y] != '$'; i++) {
+                            if (state[i][y] != '\0' && !(state[i][y] + "").equalsIgnoreCase(name.charAt(count) + "")) {
+                                t = false;
+                                break;
+                            }
+                            count++;
+                        }
+                    if(t)
+                        poswords.add(name);
+                }
+            }
+        }
     }
     //TODO icini doldur
     private int verticalOrHorizontal(char[][] state,  int x, int y){
-        if (state[x][y] == '$' || (state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y + 1] == '\0' && state[x][y - 1] == '\0') || (state[x][y - 1] == '$' && state[x][y + 1] == '$' && state[x - 1][y] == '\0' && state[x + 1][y] == '\0'))
+        if (state[x][y] == '$' || (state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y + 1] != '$' && state[x][y - 1] != '$') || (state[x][y - 1] == '$' && state[x][y + 1] == '$' && state[x - 1][y] != '$' && state[x + 1][y] != '$'))
             return CrosswordSolution.NOT_A_HEAD;
-        if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] == '\0'))
+        if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] != '$'))
             return CrosswordSolution.HORIZONTAL;
-        if (state[x - 1][y] == '$' && state[x][y - 1] == '$' && state[x + 1][y] == '\0' && state[x][y + 1] == '\0')
+        if (state[x - 1][y] == '$' && state[x][y - 1] == '$' && state[x + 1][y] != '$' && state[x][y + 1] != '$')
             return CrosswordSolution.VERTICAL_AND_HORIZONTAL;
-        if (state[x - 1][y] == '$' && state[x + 1][y] == '\0')
+        if (state[x - 1][y] == '$' && state[x + 1][y] != '$')
             return CrosswordSolution.VERTICAL;
         return -1;
     }
