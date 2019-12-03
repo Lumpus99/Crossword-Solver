@@ -45,8 +45,8 @@ public class CrosswordState {
         this.point = point;
     }
 
-    public boolean isEmpty(){
-        return words.isEmpty();
+    public boolean isRemainsOne(){
+        return words.size() == 1;
     }
 
     public int getType() {
