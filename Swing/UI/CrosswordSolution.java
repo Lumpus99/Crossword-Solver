@@ -196,7 +196,12 @@ public class CrosswordSolution implements ActionListener {
     }
     //TODO icini doldur
     private List<String> getSuitableWords(char[][] state, int x, int y, int type){
+        List<Point> pospoints = new ArrayList<>();
+        for (int i = 1; i < state.length - 1; i++) {
+            for (int j = 1; j < state[i].length - 1; j++) {
 
+            }
+        }
         return null;
     }
     //TODO icini doldur
