@@ -294,12 +294,12 @@ public class CrosswordSolution implements ActionListener {
     private int verticalOrHorizontal(char[][] state,  int x, int y){
         if (state[x][y] == '$' || (state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y + 1] != '$' && state[x][y - 1] != '$') || (state[x][y - 1] == '$' && state[x][y + 1] == '$' && state[x - 1][y] != '$' && state[x + 1][y] != '$'))
             return CrosswordSolution.NOT_A_HEAD;
-        if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] != '$'))
-            return CrosswordSolution.HORIZONTAL;
         if (state[x - 1][y] == '$' && state[x][y - 1] == '$' && state[x + 1][y] != '$' && state[x][y + 1] != '$')
             return CrosswordSolution.VERTICAL_AND_HORIZONTAL;
-        if (state[x - 1][y] == '$' && state[x + 1][y] != '$')
+        if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] != '$'))
             return CrosswordSolution.VERTICAL;
+        if (state[x - 1][y] == '$' && state[x + 1][y] != '$')
+            return CrosswordSolution.HORIZONTAL;
         return -1;
     }
     /*
