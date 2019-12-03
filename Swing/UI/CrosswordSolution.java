@@ -123,7 +123,8 @@ public class CrosswordSolution implements ActionListener {
             }
             CrosswordState currentState = state_stack.peek();
             int head_type = verticalOrHorizontal(currentState.getBoard(), heads.get(count).x, heads.get(count).y);
-            if(head_type == CrosswordSolution.VERTICAL_AND_HORIZONTAL &&)
+            if(head_type == CrosswordSolution.VERTICAL_AND_HORIZONTAL)
+                System.out.println("asd");
 
             if (head_type == CrosswordSolution.HORIZONTAL || head_type == CrosswordSolution.VERTICAL) {
                 List<String> head_possible_words = getSuitableWords(currentState.getBoard(), heads.get(count).x, heads.get(count).y, head_type);
@@ -205,19 +206,40 @@ public class CrosswordSolution implements ActionListener {
                 return state_stack;
         }
     }
+    /* private static final int NOT_A_HEAD = -1;
+    private static final int VERTICAL = 0;
+    private static final int HORIZONTAL = 1;
+    private static final int VERTICAL_AND_HORIZONTAL = 2;*/
+    //TODO icini doldur
+    private List<Point> getSpaceList (char[][] state){
+        List<Point> pospoints = new ArrayList<>();
+        for (int i = 1; i < state.length - 1; i++) {
+            for (int j = 1; j < state[i].length - 1; j++) {
+                int availability = verticalOrHorizontal(state, i, j);
+                if (availability == 0 || availability == 1 || availability == 2) {
+                    Point point = new Point(i,j);
+                    pospoints.add(point);
+                }
+            }
+        }
+        return pospoints;
+    }
 
     //TODO icini doldur
-    private List<Point> getSpaceList(char[][] state) {
+    private List<String> getSuitableWords(char[][] state, int x, int y, int type){
         return null;
     }
 
     //TODO icini doldur
-    private List<String> getSuitableWords(char[][] state, int x, int y, int type) {
-        return null;
-    }
-
-    //TODO icini doldur
-    private int verticalOrHorizontal(char[][] state, int x, int y) {
+    private int verticalOrHorizontal(char[][] state,  int x, int y){
+        if (state[x][y] == '$' || (state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y + 1] == '\0' && state[x][y - 1] == '\0') || (state[x][y - 1] == '$' && state[x][y + 1] == '$' && state[x - 1][y] == '\0' && state[x + 1][y] == '\0'))
+            return CrosswordSolution.NOT_A_HEAD;
+        if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] == '\0'))
+            return CrosswordSolution.HORIZONTAL;
+        if (state[x - 1][y] == '$' && state[x][y - 1] == '$' && state[x + 1][y] == '\0' && state[x][y + 1] == '\0')
+            return CrosswordSolution.VERTICAL_AND_HORIZONTAL;
+        if (state[x - 1][y] == '$' && state[x + 1][y] == '\0')
+            return CrosswordSolution.VERTICAL;
         return -1;
     }
     /*
