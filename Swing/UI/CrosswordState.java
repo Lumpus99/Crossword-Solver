@@ -5,11 +5,11 @@ import java.util.List;
 
 public class CrosswordState {
     private char[][] board;
-    private List words;
+    private List<String> words;
     private Point point;
     private int type; //vertical or horiz
 
-    public CrosswordState(char[][] board, List words, Point point, int type) {
+    public CrosswordState(char[][] board, List<String> words, Point point, int type) {
         this.board = board;
         this.words = words;
         this.point = point;
@@ -25,7 +25,7 @@ public class CrosswordState {
         this.board = board;
     }
 
-    public List getWords() {
+    public List<String> getWords() {
         return words;
     }
 
@@ -47,6 +47,10 @@ public class CrosswordState {
 
     public boolean isRemainsOne(){
         return words.size() == 1;
+    }
+
+    public boolean isEmpty(){
+        return words.isEmpty();
     }
 
     public int getType() {

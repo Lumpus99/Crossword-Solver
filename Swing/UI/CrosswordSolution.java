@@ -1,22 +1,18 @@
 package Swing.UI;
-
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import java.util.*;
 import java.io.*;
-import java.util.List;
 
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
-    private final List<String> WORDS = new ArrayList<>();
-    private static final int NOT_A_HEAD = -1;
-    private static final int VERTICAL = 0;
-    private static final int HORIZONTAL = 1;
-    private static final int VERTICAL_AND_HORIZONTAL = 2;
-
+    private HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
+    private Stack<char[][]> crosswords;
+    private Stack<ArrayList<String>> words;
+    private Stack<Integer> currentposes;
+    private ArrayList<char[][]> matrixes;
 
     CrosswordSolution(CrosswordGui crosswordGui) {
         gui = crosswordGui;
@@ -24,300 +20,45 @@ public class CrosswordSolution implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         long start = System.currentTimeMillis();
-
+        crosswords = new Stack<>();
+        words = new Stack<>();
+        currentposes = new Stack<>();
+        WORDS_MAP = new HashMap<>();
+        matrixes = new ArrayList<>();
+        ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("D:\\Crossword-Tests\\Test1\\words2.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words3.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
-            return;
         }
+        String line = "";
         try {
-            String line;
-            while ((line = br.readLine()) != null) {
-                WORDS.add(line);
+            while ((line=br.readLine()) != null) {
+                WORDS_MAP.put(line, line.length());
+                allwords.add(line);
             }
         } catch (IOException ex) {
             ex.printStackTrace();
-            return;
         }
-        char[][] solution = solve();
-        if(solution == null)
-            System.out.println("No solution.");
-        else
-            for(int i=0; i<solution.length; i++) {
-                for(int j=0; j<solution[i].length; j++) {
-                    System.out.print(solution[i][j]);
-                }
-                System.out.println("");
-            }
-
+        char[][] guimatrix = new char[gui.getX_size()][gui.getY_size()];
+        changetoMatrix(guimatrix,gui);
+        crosswords.push(guimatrix);
+        words.push(allwords);
+        currentposes.push(0);
+        char[][] solved = solve_Puzzle();
+        if(solved == null) {
+            gui.result("No solution found",false);
+        }else {
+            changetoGui(solved);
+            gui.result("A solution is found",true);
+        }
         long end = System.currentTimeMillis();
         float sec = (end - start) / 1000F;
-        System.out.println("All conditions searched for " + sec + " seconds");
-    }
-    private char[][] initialize() {
-        char[][] initial = new char[gui.getX_size() + 2][gui.getY_size() + 2];
-        for (int i = 0; i < initial.length; i++) {
-            for (int j = 0; j < initial[i].length; j++) {
-                if (i == 0 || j == 0 || i == gui.getX_size() + 1 || j == gui.getY_size() + 1) {
-                    initial[i][j] = '$';
-                } else if (i <= gui.getX_size() && j <= gui.getY_size() && gui.isBlack(i - 1, j - 1)) {
-                    initial[i][j] = '$';
-                } else if (i < gui.getX_size() && j < gui.getY_size() && gui.isUserEntered(i - 1, j - 1)) {
-                    initial[i][j] = gui.getLetter(i - 1, j - 1);
-                }else{
-                    initial[i][j] = '\0';
-                }
-            }
-        }
-        return initial;
+        System.out.println("All conditions searched for " + sec+ " seconds");
     }
 
-    private char[][] solve() {
-        Stack<CrosswordState> state_stack = new Stack<>();
-
-        char[][] current_puzzle = initialize();
-        List<Point> heads = getSpaceList(current_puzzle);
-        if (heads.isEmpty())
-            return null;
-        int type = verticalOrHorizontal(current_puzzle, heads.get(0).x, heads.get(0).y);
-        List<String> possible_words = null;
-        List<String> possible_words_v = null;
-        List<String> possible_words_h = null;
-
-        if (type == CrosswordSolution.HORIZONTAL) {
-            possible_words = getSuitableWords(current_puzzle, heads.get(0).x, heads.get(0).y, CrosswordSolution.HORIZONTAL);
-        } else if (type == CrosswordSolution.VERTICAL) {
-            possible_words = getSuitableWords(current_puzzle, heads.get(0).x, heads.get(0).y, CrosswordSolution.VERTICAL);
-        } else if (type == CrosswordSolution.VERTICAL_AND_HORIZONTAL) {
-            possible_words_h = getSuitableWords(current_puzzle, heads.get(0).x, heads.get(0).y, CrosswordSolution.HORIZONTAL);
-            boolean backtrack = false;
-            do {
-                if (backtrack) {
-                    possible_words_h.remove(0);
-                }
-                if (possible_words_h.isEmpty())
-                    return null;
-
-                current_puzzle = insertWord(current_puzzle, possible_words_h.get(0), heads.get(0).x, heads.get(0).y, CrosswordSolution.HORIZONTAL);
-
-                possible_words_v = getSuitableWords(current_puzzle, heads.get(0).x, heads.get(0).y, CrosswordSolution.VERTICAL);
-                if (!possible_words_v.isEmpty())
-                    current_puzzle = insertWord(current_puzzle, possible_words_v.get(0), heads.get(0).x, heads.get(0).y, CrosswordSolution.VERTICAL);
-                backtrack = true;
-            } while (possible_words_v.isEmpty());
-
-            CrosswordState crosswordState_h = new CrosswordState(copyOf(current_puzzle), possible_words_h, heads.get(0), CrosswordSolution.HORIZONTAL);
-            CrosswordState crosswordState_v = new CrosswordState(copyOf(current_puzzle), possible_words_v, heads.get(0), CrosswordSolution.VERTICAL);
-            state_stack.push(crosswordState_h);
-            state_stack.push(crosswordState_v);
-        }
-
-        if (possible_words != null) {
-            if (possible_words.isEmpty())
-                return null;
-            current_puzzle = insertWord(current_puzzle, possible_words.get(0), heads.get(0).x, heads.get(0).y, type);
-            CrosswordState crosswordState = new CrosswordState(copyOf(current_puzzle), possible_words, heads.get(0), type);
-            state_stack.push(crosswordState);
-        }
-
-        for (int count = 1;; count++) {
-            if(state_stack.isEmpty())
-                return null;
-            print(state_stack.peek().getBoard());
-            if (count == heads.size()) {
-                return state_stack.peek().getBoard();
-            }
-            CrosswordState currentState = state_stack.peek();
-            int head_type = verticalOrHorizontal(currentState.getBoard(), heads.get(count).x, heads.get(count).y);
-            if(head_type == CrosswordSolution.VERTICAL_AND_HORIZONTAL && currentState.getPoint() == new Point(heads.get(count).x, heads.get(count).y))
-                head_type = CrosswordSolution.VERTICAL;
-
-            if (head_type == CrosswordSolution.HORIZONTAL || head_type == CrosswordSolution.VERTICAL) {
-                List<String> head_possible_words = getSuitableWords(currentState.getBoard(), heads.get(count).x, heads.get(count).y, head_type);
-                if (head_possible_words.isEmpty()) {
-                    state_stack = backtrack(state_stack);
-                    if(state_stack == null)
-                        return null;
-
-                    state_stack.peek().remove_One();
-                    count = heads.indexOf(state_stack.peek().getPoint()) - 1;
-                } else {
-                    char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words.get(0), heads.get(count).x, heads.get(count).y, head_type);
-                    CrosswordState newState = new CrosswordState(copyOf(newBoard), head_possible_words, heads.get(count), head_type);
-                    state_stack.push(newState);
-                }
-            }else if(head_type == CrosswordSolution.VERTICAL_AND_HORIZONTAL){
-                List<String> head_possible_words_h = getSuitableWords(currentState.getBoard(), heads.get(count).x, heads.get(count).y, CrosswordSolution.HORIZONTAL);
-                if (head_possible_words_h.isEmpty()) {
-                    state_stack = backtrack(state_stack);
-                    if(state_stack == null)
-                        return null;
-
-                    state_stack.peek().remove_One();
-                    count = heads.indexOf(state_stack.peek().getPoint()) - 1;
-                } else {
-                    char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words_h.get(0), heads.get(count).x, heads.get(count).y, CrosswordSolution.HORIZONTAL);
-                    CrosswordState newState = new CrosswordState(copyOf(newBoard), head_possible_words_h, heads.get(count), CrosswordSolution.HORIZONTAL);
-                    state_stack.push(newState);
-                }
-                List<String> head_possible_words_v = getSuitableWords(currentState.getBoard(), heads.get(count).x, heads.get(count).y, CrosswordSolution.VERTICAL);
-                if (head_possible_words_v.isEmpty()) {
-                    state_stack = backtrack(state_stack);
-                    if(state_stack == null)
-                        return null;
-
-                    state_stack.peek().remove_One();
-                    count = heads.indexOf(state_stack.peek().getPoint()) - 1;
-                } else {
-                    char[][] newBoard = insertWord(currentState.getBoard(), head_possible_words_v.get(0), heads.get(count).x, heads.get(count).y, CrosswordSolution.VERTICAL);
-                    CrosswordState newState = new CrosswordState(copyOf(newBoard), head_possible_words_v, heads.get(count), CrosswordSolution.VERTICAL);
-                    state_stack.push(newState);
-                }
-            }else{
-                System.out.println("This shouldn't print...");
-            }
-        }
-    }
-
-    private char[][] insertWord(char[][] state, String word, int x, int y, int type) {
-        if (getSpaceLength(state, x, y, type) != word.length())
-            return null;
-        if (type == CrosswordSolution.VERTICAL) {
-            for (int counter = 0; state[x + counter][y] != '$'; counter++) {
-                if (!Character.isUpperCase(state[x + counter][y]))
-                    state[x + counter][y] = word.charAt(counter);
-            }
-        } else {
-            for (int counter = 0; state[x][y + counter] != '$'; counter++) {
-                if (!Character.isUpperCase(state[x][y + counter]))
-                    state[x][y + counter] = word.charAt(counter);
-            }
-        }
-        return state;
-    }
-
-    //İlk harfinin x ve y koordinatlarını alıyor ve sığabilecek kelime büyüklüğünü veriyor
-    private int getSpaceLength(char[][] state, int x, int y, int type) {
-        int counter;
-        if (type == CrosswordSolution.VERTICAL) {
-            for (counter = 0; state[x + counter][y] != '$'; counter++) ;
-        } else {
-            for (counter = 0; state[x][y + counter] != '$'; counter++) ;
-        }
-        return counter;
-    }
-
-    private boolean isStartofWord(char[][] state, int x, int y) {
-        if (state[x][y] == '$')
-            return false;
-        return (state[x + 1][y] == '$' || state[x][y - 1] != '$');
-
-    }
-
-    private Stack<CrosswordState> backtrack(Stack<CrosswordState> state_stack){
-        System.out.println("Backtrack");
-        while (true) {
-            if (state_stack.isEmpty())
-                return null;
-            if (state_stack.peek().isRemainsOne())
-                state_stack.pop();
-            else
-                return state_stack;
-        }
-    }
-    public static char[][] copyOf(char[][] original) {
-        char [][] newArr = new char[original.length][];
-        for(int i = 0; i < original.length; i++)
-            newArr[i] = original[i].clone();
-        return newArr;
-    }
-    /* private static final int NOT_A_HEAD = -1;
-    private static final int VERTICAL = 0;
-    private static final int HORIZONTAL = 1;
-    private static final int VERTICAL_AND_HORIZONTAL = 2;*/
-    //TODO icini doldur
-    private List<Point> getSpaceList (char[][] state){
-        List<Point> pospoints = new ArrayList<>();
-        for (int i = 1; i < state.length; i++) {
-            for (int j = 1; j < state[i].length; j++) {
-                int availability = verticalOrHorizontal(state, i, j);
-                if (availability != CrosswordSolution.NOT_A_HEAD) {
-                    Point point = new Point(i,j);
-                    pospoints.add(point);
-                }
-            }
-        }
-        return pospoints;
-    }
-    //TODO icini doldur
-    private List<String> getSuitableWords(char[][] state, int x, int y, int type){
-        List<String> poswords = new ArrayList<>();
-        if(type == CrosswordSolution.HORIZONTAL)
-            lookforwords(state, x, y, poswords, HORIZONTAL);
-        else if(type == CrosswordSolution.VERTICAL)
-            lookforwords(state, x, y, poswords, VERTICAL);
-        return poswords;
-    }
-    private void lookforwords(char[][] state, int x, int y, List<String> poswords, int vertical) {
-        for(String name : WORDS) {
-            if (state[x][y] == '\0' || (state[x][y] != '$' && (state[x][y] + "").equalsIgnoreCase(name.charAt(0) + ""))) {
-                int count = getSpaceLength(state, x, y, vertical);
-                if (count == name.length()) {
-                    boolean t = true;
-                    count = 0;
-                    if(vertical == CrosswordSolution.HORIZONTAL)
-                        for(int j = y; state[x][j] != '$'; j++) {
-                            if (state[x][j] != '\0' && !(state[x][j] + "").equalsIgnoreCase(name.charAt(count) + "")) {
-                                t = false;
-                                break;
-                            }
-                            count++;
-                        }
-                    else if(vertical == CrosswordSolution.VERTICAL)
-                        for(int i = x; state[i][y] != '$'; i++) {
-                            if (state[i][y] != '\0' && !(state[i][y] + "").equalsIgnoreCase(name.charAt(count) + "")) {
-                                t = false;
-                                break;
-                            }
-                            count++;
-                        }
-                    if(t)
-                        poswords.add(name);
-                }
-            }
-        }
-    }
-    //TODO icini doldur
-    private int verticalOrHorizontal(char[][] state,  int x, int y){
-        if(state[x][y] == '$')
-            return CrosswordSolution.NOT_A_HEAD;
-        if (state[x][y] == '$' || (state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y + 1] != '$' && state[x][y - 1] != '$') || (state[x][y - 1] == '$' && state[x][y + 1] == '$' && state[x - 1][y] != '$' && state[x + 1][y] != '$'))
-            return CrosswordSolution.NOT_A_HEAD;
-        if (state[x - 1][y] == '$' && state[x][y - 1] == '$' && state[x + 1][y] != '$' && state[x][y + 1] != '$')
-            return CrosswordSolution.VERTICAL_AND_HORIZONTAL;
-        if ((state[x][y + 1] == '$' && state[x - 1][y] == '$' && state[x + 1][y] == '$' && state[x][y - 1] == '$') || (state[x][y - 1] == '$' && state[x][y + 1] != '$'))
-            return CrosswordSolution.HORIZONTAL;
-        if (state[x - 1][y] == '$' && state[x + 1][y] != '$')
-            return CrosswordSolution.VERTICAL;
-        return -1;
-    }
-    private void print(char[][] state){
-        for(int i=0; i<state.length; i++) {
-            for(int j=0; j<state[i].length; j++) {
-                if(state[i][j] == '\0')
-                    System.out.print(" ");
-                else
-                    System.out.print(state[i][j]);
-            }
-            System.out.println();
-        }
-        System.out.println("--------");
-    }
-    /*
     private char[][] solve_Puzzle()
     {
         if(!lookforonewords())
@@ -333,7 +74,7 @@ public class CrosswordSolution implements ActionListener {
             cmap = words.peek();
             for (int i = 0; i < cmatrix.length; i++) {
                 for (int j = 0; j < cmatrix[i].length; j++) {
-                    if (cmatrix[i][j] != '?') {
+                    if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?') ) {
                         for (current = currentposes.peek(); current < cmap.size(); current++) {
                             String name = cmap.get(current);
                             if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0'))))
@@ -375,18 +116,11 @@ public class CrosswordSolution implements ActionListener {
                                     return hnextmatrix;
                                 currentposes.pop();
                                 currentposes.push(current + 1);  // we update current position of this matrix's wordlist
-                                if(t3) {
-                                    hnextmap.remove(name);
-                                    currentposes.push(0);
-                                    words.push(hnextmap);
-                                    crosswords.push(hnextmatrix);
-                                }
-                                if(t4) {  //We put our matrix, both horizontically and vertically if possible, since when this word is put with only horizontically maybe it has a solution in vertical and vice versa(or both)
-                                    vnextmap.remove(name);
-                                    currentposes.push(0);
-                                    words.push(vnextmap);
-                                    crosswords.push(vnextmatrix);
-                                }
+                                t1 = true; t2 = true;
+                                t1 = isT1(hnextmatrix, hnextmap, name, t3);
+                                t2 = isT1(vnextmatrix, vnextmap, name, t4);
+                                if (!t1 && !t2)
+                                    continue;
                                 continue outer;
                             }
                         }
@@ -399,7 +133,67 @@ public class CrosswordSolution implements ActionListener {
         }
         return null;
     }
-    private boolean lookforonewords() // In this METHOD we look for one-lengthed words. THeir count , we put them randomly to boxes surrounded by black points
+
+    private boolean isT1(char[][] hnextmatrix, ArrayList<String> hnextmap, String name, boolean t3) {
+        if(t3) {
+            if(!lookformatrixes(hnextmatrix)) {
+                hnextmap.remove(name);
+                if(allwallsfull(hnextmatrix)){
+                    ArrayList<Character> fcharacter = getAllfcharacters(hnextmatrix);
+                    for(int i = 0; i< hnextmap.size(); i++)
+                        if(!fcharacter.contains(hnextmap.get(i).charAt(0))){
+                            hnextmap.remove(hnextmap.get(i));
+                            i = 0; continue;
+                        }
+                }
+                currentposes.push(0);
+                words.push(hnextmap);
+                crosswords.push(hnextmatrix);
+                matrixes.add(hnextmatrix);
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+    private boolean allwallsfull(char[][] matrix)
+    {
+        for(int i = 0; i < matrix.length; i++)
+            for (int j = 0; j < matrix[i].length; j++)
+                if(matrix[i][j] != '?' && (i == 0 || j == 0  || matrix[i][j - 1] == '?' || matrix[i - 1][j] == '?'))
+                    if(matrix[i][j] == '\0')
+                        return false;
+        return true;
+    }
+    private ArrayList<Character> getAllfcharacters(char[][] matrix)
+    {
+        ArrayList<Character> fcharacters = new ArrayList<>();
+        for(int i = 0; i < matrix.length; i++)
+            for (int j = 0; j < matrix[i].length; j++)
+                if(matrix[i][j] != '?' && (i == 0 || j == 0  || matrix[i][j - 1] == '?' || matrix[i - 1][j] == '?'))
+                    fcharacters.add(matrix[i][j]);
+        return fcharacters;
+    }
+    private boolean lookformatrixes(char[][] matrix)
+    {
+        for(int i = 0; i < matrixes.size(); i++){
+            boolean t = true;
+            for(int z = 0; z < matrixes.get(i).length; z++) {
+                for (int j = 0; j < matrixes.get(i)[z].length; j++) {
+                    if (matrix[z][j] != matrixes.get(i)[z][j]){
+                        t = false;
+                        break;
+                    }
+                }
+                if(!t)
+                    break;
+            }
+            if(t)
+                return true;
+        }
+        return false;
+    }
+    private boolean lookforonewords() // In this METHOD we look for one-lengthed words. THeir count , we put them randomly to boxes surrounded by black points. And also removing words which length is
     {
         int countsurrounded = 0, olenwords = 0;
         char[][] tempm = crosswords.pop();
@@ -433,15 +227,47 @@ public class CrosswordSolution implements ActionListener {
                 }
             }
         }
+        crosswords.push(tempm);
+        int maxblank = findMaxsizeBlank();
+        boolean avalenword = false;
+        for(int i = 0; i < tempa.size(); i++)
+            if( tempa.get(i).length() >= maxblank){
+                avalenword = true;
+                break;
+            }
+        if(!avalenword)
+            return false;
         for(int i = 0; i < tempa.size(); i++) //WE remove rest of the one-length words.
-            if(tempa.get(i).length() == 1) {
+            if(tempa.get(i).length() == 1 || tempa.get(i).length() > maxblank) {
                 tempa.remove(tempa.get(i));
                 i = 0; continue;
             }
-        crosswords.push(tempm);
+        System.out.println("MAX BLANK=  "+ findMaxsizeBlank() +" And  "+  tempa.size());
         words.push(tempa);
         return true;
 
+    }
+    private int findMaxsizeBlank()
+    {
+        int maxblank = 0;
+        char[][] cmatrix = crosswords.peek();
+        for(int i = 0; i < cmatrix.length; i++) {
+            for (int j = 0; j < cmatrix[i].length; j++) {
+                if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')){
+                    int count = j;
+                    do{
+                        count++;
+                    }while(count < cmatrix[i].length && cmatrix[i][count] != '?' );
+                    maxblank = Math.max(maxblank, count - j);
+                    count = i;
+                    do{
+                        count++;
+                    }while(count < cmatrix.length && cmatrix[count][j] != '?' );
+                    maxblank = Math.max(maxblank, count - i);
+                }
+            }
+        }
+        return maxblank;
     }
     private boolean canbeFilled(int x, int y, int xory, int value, char[][] nextmatrix) //FIRSTLY we are looking for word can be filled with its length
     {
@@ -471,7 +297,7 @@ public class CrosswordSolution implements ActionListener {
     {
         int[] marker = new int[name.length()];
         if(xory == -1){ // we fill for y
-            if(!((y >= 1 && nextmatrix[x][y - 1] == '?') || y == 0))  //WE look that position must be at terrain or behind of black zone
+            if(!((y >= 1 && nextmatrix[x][y - 1] != '?') || y == 0))
                 return false;
             int z = y,count = 0;
             while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' )
@@ -515,7 +341,7 @@ public class CrosswordSolution implements ActionListener {
             }
         }
         else{ // we fill for x  (SAME ACTIONS happen at above ) only looking conditions about positions are changed
-            if(!((x >= 1 && nextmatrix[x - 1][y] == '?') || x == 0))
+            if(!((x >= 1 && nextmatrix[x - 1][y] != '?') || x == 0))
                 return false;
             int z = x,count = 0;
             while(z < nextmatrix.length && nextmatrix[z][y] != '?' )
@@ -644,5 +470,5 @@ public class CrosswordSolution implements ActionListener {
             for (int j = 0; j < copiedone[i].length; j++)
                 copied[i][j] = copiedone[i][j];
     }
-    */
+
 }
