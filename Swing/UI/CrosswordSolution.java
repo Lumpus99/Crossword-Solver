@@ -2,7 +2,9 @@ package Swing.UI;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Stack;
+import java.util.HashMap;
 import java.io.*;
 
 public class CrosswordSolution implements ActionListener {
@@ -13,23 +15,21 @@ public class CrosswordSolution implements ActionListener {
     private Stack<ArrayList<String>> words;
     private Stack<Integer> currentposes;
     private ArrayList<char[][]> matrixes;
-
     CrosswordSolution(CrosswordGui crosswordGui) {
         gui = crosswordGui;
     }
-
     @Override
     public void actionPerformed(ActionEvent e) {
         long start = System.currentTimeMillis();
+        matrixes = new ArrayList<>();
         crosswords = new Stack<>();
         words = new Stack<>();
         currentposes = new Stack<>();
         WORDS_MAP = new HashMap<>();
-        matrixes = new ArrayList<>();
         ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words3.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -58,7 +58,6 @@ public class CrosswordSolution implements ActionListener {
         float sec = (end - start) / 1000F;
         System.out.println("All conditions searched for " + sec+ " seconds");
     }
-
     private char[][] solve_Puzzle()
     {
         if(!lookforonewords())
@@ -74,7 +73,7 @@ public class CrosswordSolution implements ActionListener {
             cmap = words.peek();
             for (int i = 0; i < cmatrix.length; i++) {
                 for (int j = 0; j < cmatrix[i].length; j++) {
-                    if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?') ) {
+                    if (cmatrix[i][j] != '?' && (i == 0 || j == 0 || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')) {
                         for (current = currentposes.peek(); current < cmap.size(); current++) {
                             String name = cmap.get(current);
                             if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0'))))
@@ -116,11 +115,24 @@ public class CrosswordSolution implements ActionListener {
                                     return hnextmatrix;
                                 currentposes.pop();
                                 currentposes.push(current + 1);  // we update current position of this matrix's wordlist
-                                t1 = true; t2 = true;
-                                t1 = isT1(hnextmatrix, hnextmap, name, t3);
-                                t2 = isT1(vnextmatrix, vnextmap, name, t4);
-                                if (!t1 && !t2)
-                                    continue;
+                                if(t3) {
+                                    if(!lookformatrixes(hnextmatrix)) {
+                                        hnextmap.remove(name);
+                                        currentposes.push(0);
+                                        words.push(hnextmap);
+                                        crosswords.push(hnextmatrix);
+                                        matrixes.add(hnextmatrix);
+                                    }
+                                }
+                                if(t4) {  //We put our matrix, both horizontically and vertically if possible, since when this word is put with only horizontically maybe it has a solution in vertical and vice versa(or both)
+                                    if(!lookformatrixes(vnextmatrix)) {
+                                        vnextmap.remove(name);
+                                        currentposes.push(0);
+                                        words.push(vnextmap);
+                                        crosswords.push(vnextmatrix);
+                                        matrixes.add(vnextmatrix);
+                                    }
+                                }
                                 continue outer;
                             }
                         }
@@ -132,47 +144,6 @@ public class CrosswordSolution implements ActionListener {
             currentposes.pop();
         }
         return null;
-    }
-
-    private boolean isT1(char[][] hnextmatrix, ArrayList<String> hnextmap, String name, boolean t3) {
-        if(t3) {
-            if(!lookformatrixes(hnextmatrix)) {
-                hnextmap.remove(name);
-                if(allwallsfull(hnextmatrix)){
-                    ArrayList<Character> fcharacter = getAllfcharacters(hnextmatrix);
-                    for(int i = 0; i< hnextmap.size(); i++)
-                        if(!fcharacter.contains(hnextmap.get(i).charAt(0))){
-                            hnextmap.remove(hnextmap.get(i));
-                            i = 0; continue;
-                        }
-                }
-                currentposes.push(0);
-                words.push(hnextmap);
-                crosswords.push(hnextmatrix);
-                matrixes.add(hnextmatrix);
-                return true;
-            }
-            return false;
-        }
-        return false;
-    }
-    private boolean allwallsfull(char[][] matrix)
-    {
-        for(int i = 0; i < matrix.length; i++)
-            for (int j = 0; j < matrix[i].length; j++)
-                if(matrix[i][j] != '?' && (i == 0 || j == 0  || matrix[i][j - 1] == '?' || matrix[i - 1][j] == '?'))
-                    if(matrix[i][j] == '\0')
-                        return false;
-        return true;
-    }
-    private ArrayList<Character> getAllfcharacters(char[][] matrix)
-    {
-        ArrayList<Character> fcharacters = new ArrayList<>();
-        for(int i = 0; i < matrix.length; i++)
-            for (int j = 0; j < matrix[i].length; j++)
-                if(matrix[i][j] != '?' && (i == 0 || j == 0  || matrix[i][j - 1] == '?' || matrix[i - 1][j] == '?'))
-                        fcharacters.add(matrix[i][j]);
-        return fcharacters;
     }
     private boolean lookformatrixes(char[][] matrix)
     {
@@ -193,7 +164,7 @@ public class CrosswordSolution implements ActionListener {
         }
         return false;
     }
-    private boolean lookforonewords() // In this METHOD we look for one-lengthed words. THeir count , we put them randomly to boxes surrounded by black points. And also removing words which length is
+    private boolean lookforonewords() // In this METHOD we look for one-lengthed words. THeir count , we put them randomly to boxes surrounded by black points
     {
         int countsurrounded = 0, olenwords = 0;
         char[][] tempm = crosswords.pop();
@@ -253,18 +224,18 @@ public class CrosswordSolution implements ActionListener {
         char[][] cmatrix = crosswords.peek();
         for(int i = 0; i < cmatrix.length; i++) {
             for (int j = 0; j < cmatrix[i].length; j++) {
-               if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')){
-                   int count = j;
-                   do{
-                       count++;
-                   }while(count < cmatrix[i].length && cmatrix[i][count] != '?' );
-                   maxblank = Math.max(maxblank, count - j);
-                   count = i;
-                   do{
-                       count++;
-                   }while(count < cmatrix.length && cmatrix[count][j] != '?' );
-                   maxblank = Math.max(maxblank, count - i);
-               }
+                if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')){
+                    int count = j;
+                    do{
+                        count++;
+                    }while(count < cmatrix[i].length && cmatrix[i][count] != '?' );
+                    maxblank = Math.max(maxblank, count - j);
+                    count = i;
+                    do{
+                        count++;
+                    }while(count < cmatrix.length && cmatrix[count][j] != '?' );
+                    maxblank = Math.max(maxblank, count - i);
+                }
             }
         }
         return maxblank;
@@ -297,7 +268,7 @@ public class CrosswordSolution implements ActionListener {
     {
         int[] marker = new int[name.length()];
         if(xory == -1){ // we fill for y
-            if(!((y >= 1 && nextmatrix[x][y - 1] != '?') || y == 0))
+            if(!((y >= 1 && nextmatrix[x][y - 1] == '?') || y == 0))  //WE look that position must be at terrain or behind of black zone
                 return false;
             int z = y,count = 0;
             while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' )
@@ -341,7 +312,7 @@ public class CrosswordSolution implements ActionListener {
             }
         }
         else{ // we fill for x  (SAME ACTIONS happen at above ) only looking conditions about positions are changed
-            if(!((x >= 1 && nextmatrix[x - 1][y] != '?') || x == 0))
+            if(!((x >= 1 && nextmatrix[x - 1][y] == '?') || x == 0))
                 return false;
             int z = x,count = 0;
             while(z < nextmatrix.length && nextmatrix[z][y] != '?' )
@@ -470,5 +441,4 @@ public class CrosswordSolution implements ActionListener {
             for (int j = 0; j < copiedone[i].length; j++)
                 copied[i][j] = copiedone[i][j];
     }
-
 }
