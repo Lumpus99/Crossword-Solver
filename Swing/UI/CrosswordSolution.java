@@ -118,6 +118,7 @@ public class CrosswordSolution implements ActionListener {
                                     return hnextmatrix;
                                 currentposes.pop();
                                 currentposes.push(current + 1);  // we update current position of this matrix's wordlist
+                                t1 = false; t2 = false;
                                 if(t3) {
                                     if(!lookformatrixes(hnextmatrix)) {
                                         hnextmap.remove(name);
@@ -125,6 +126,7 @@ public class CrosswordSolution implements ActionListener {
                                         words.push(hnextmap);
                                         crosswords.push(hnextmatrix);
                                         matrixes.add(hnextmatrix);
+                                        t1 = true;
                                     }
                                 }
                                 if(t4) {  //We put our matrix, both horizontically and vertically if possible, since when this word is put with only horizontically maybe it has a solution in vertical and vice versa(or both)
@@ -134,8 +136,11 @@ public class CrosswordSolution implements ActionListener {
                                         words.push(vnextmap);
                                         crosswords.push(vnextmatrix);
                                         matrixes.add(vnextmatrix);
+                                        t2 = true;
                                     }
                                 }
+                                if(!(t1 || t2))
+                                    continue;
                                 continue outer;
                             }
                         }
