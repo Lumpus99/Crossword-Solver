@@ -19,15 +19,16 @@ public class CrosswordGui {
     private final JPanel gui = new JPanel(new BorderLayout(3, 3));
     private JButton[][] squares;
     private JLabel[][] matrix;
+    private JButton solveButton;
     private JFrame frame = new JFrame("Crossword Puzzle Solver");
     private final JLabel message = new JLabel("Crossword Puzzle");
     private int x_size,y_size;
 
-    public CrosswordGui(int x, int y) {
+    public CrosswordGui(int x, int y, int frequency) {
         x_size=x;
         y_size=y;
 
-        initializeGui(x, y);
+        initializeGui(x, y, frequency);
 
         frame.add(this.getGui());
         frame.setLocationByPlatform(true);
@@ -42,7 +43,7 @@ public class CrosswordGui {
 
     }
 
-    private void initializeGui(int x, int y) {
+    private void initializeGui(int x, int y, int frequency) {
         // set up the main GUI
         gui.setBorder(new EmptyBorder(10, 5, 10, 5));
         JToolBar tools = new JToolBar();
@@ -62,9 +63,11 @@ public class CrosswordGui {
                 for (int col = 0; col < matrix[row].length; col++) {
                     if (matrix[row][col] != null)
                         matrix[row][col].setText("\0");
+                    if(squares[row][col].getBackground() == Color.lightGray)
+                        squares[row][col].setBackground(Color.WHITE);
                 }
             }
-
+            solveButton.setEnabled(true);
         });
 
         JButton closeButton = new JButton("Quit");
@@ -74,7 +77,7 @@ public class CrosswordGui {
             System.exit(0)
         );
 
-        JButton solveButton = new JButton("Solve");
+        solveButton = new JButton("Solve");
         solveButton.addActionListener(new CrosswordSolution(this));
 
         tools.add(newButton);
@@ -100,7 +103,8 @@ public class CrosswordGui {
 
         // create the crossword squares
         Insets buttonMargin = new Insets(5, 5, 5, 5);
-        final double WHITE_FREQUENCY = 0.60; //Between 0 and 1
+        double whiteFrequency = frequency/100.0; //Between 0 and 1
+        System.out.println(whiteFrequency);
         for (int ii = 0; ii < squares.length; ii++) {
             for (int jj = 0; jj < squares[ii].length; jj++) {
                 JButton b = new JButton();
@@ -114,13 +118,15 @@ public class CrosswordGui {
                 b.setIcon(icon);
                 b.setSize(new Dimension(32,32));
 
-                if (Math.random() < WHITE_FREQUENCY) {
+                if (Math.random() < whiteFrequency) {
                     b.setBackground(Color.WHITE);
                     label = new JLabel("\0", SwingConstants.CENTER);
                     b.add(label, BorderLayout.CENTER);
-                    b.addActionListener((ActionEvent e) ->
-                        new InputBox(label, b)
-                    );
+                    b.addActionListener((ActionEvent e) -> {
+                        new InputBox(label, b);
+                        solveButton.setEnabled(true);
+
+                    });
                     matrix[ii][jj] = label;
                 } else {
                     b.setBackground(Color.BLACK);
@@ -202,10 +208,13 @@ public class CrosswordGui {
 
     public final void result(String text, boolean success){
         message.setText(text);
+
         if(success)
-            message.setForeground(new Color(34,139,34));
+            message.setForeground(new Color(34, 139, 34));
         else
             message.setForeground(new Color(139,0,0));
+
+        solveButton.setEnabled(false);
     }
 
     public final int getX_size() {
