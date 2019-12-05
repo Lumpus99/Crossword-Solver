@@ -104,7 +104,6 @@ public class CrosswordGui {
         // create the crossword squares
         Insets buttonMargin = new Insets(5, 5, 5, 5);
         double whiteFrequency = frequency/100.0; //Between 0 and 1
-        System.out.println(whiteFrequency);
         for (int ii = 0; ii < squares.length; ii++) {
             for (int jj = 0; jj < squares[ii].length; jj++) {
                 JButton b = new JButton();
