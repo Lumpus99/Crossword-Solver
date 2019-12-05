@@ -1,5 +1,6 @@
 
 package Swing.UI;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -16,8 +17,10 @@ public class CrosswordSolution implements ActionListener {
     private Stack<ArrayList<String>> words;
     private Stack<Integer> currentposes;
     private ArrayList<char[][]> matrixes;
-    CrosswordSolution(CrosswordGui crosswordGui) {
-        gui = crosswordGui;
+    private JLabel time;
+    CrosswordSolution(CrosswordGui crosswordGui, JLabel time) {
+        this.gui = crosswordGui;
+        this.time = time;
     }
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -56,8 +59,7 @@ public class CrosswordSolution implements ActionListener {
             gui.result("A solution is found",true);
         }
         long end = System.currentTimeMillis();
-        float sec = (end - start) / 1000F;
-        System.out.println("All conditions searched for " + sec+ " seconds");
+        time.setText("Time to solve: "+(end - start) / 1000F + " seconds");
     }
     private char[][] solve_Puzzle()
     {
