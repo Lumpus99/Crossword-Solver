@@ -171,7 +171,7 @@ public class CrosswordSolution implements ActionListener {
         for(int i = 0; i < matrix.length; i++)
             for (int j = 0; j < matrix[i].length; j++)
                 if(matrix[i][j] != '?' && (i == 0 || j == 0  || matrix[i][j - 1] == '?' || matrix[i - 1][j] == '?'))
-                    fcharacters.add(matrix[i][j]);
+                        fcharacters.add(matrix[i][j]);
         return fcharacters;
     }
     private boolean lookformatrixes(char[][] matrix)
@@ -253,18 +253,18 @@ public class CrosswordSolution implements ActionListener {
         char[][] cmatrix = crosswords.peek();
         for(int i = 0; i < cmatrix.length; i++) {
             for (int j = 0; j < cmatrix[i].length; j++) {
-                if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')){
-                    int count = j;
-                    do{
-                        count++;
-                    }while(count < cmatrix[i].length && cmatrix[i][count] != '?' );
-                    maxblank = Math.max(maxblank, count - j);
-                    count = i;
-                    do{
-                        count++;
-                    }while(count < cmatrix.length && cmatrix[count][j] != '?' );
-                    maxblank = Math.max(maxblank, count - i);
-                }
+               if (cmatrix[i][j] != '?' && (i == 0 || j == 0  || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')){
+                   int count = j;
+                   do{
+                       count++;
+                   }while(count < cmatrix[i].length && cmatrix[i][count] != '?' );
+                   maxblank = Math.max(maxblank, count - j);
+                   count = i;
+                   do{
+                       count++;
+                   }while(count < cmatrix.length && cmatrix[count][j] != '?' );
+                   maxblank = Math.max(maxblank, count - i);
+               }
             }
         }
         return maxblank;
