@@ -1,6 +1,6 @@
 
 package Swing.UI;
-import java.awt.*;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -12,19 +12,20 @@ import java.io.*;
 public class CrosswordSolution implements ActionListener {
 
     private CrosswordGui gui;
-    private HashMap<String, Integer>  WORDS_MAP;
+    private HashMap<String, Integer>  WORDS_MAP = new HashMap<>();
     private Stack<char[][]> crosswords;
     private Stack<ArrayList<String>> words;
     private Stack<Integer> currentposes;
-    private ArrayList<char[][]> matrixes,fmatrixes;
-    CrosswordSolution(CrosswordGui crosswordGui) {
-        gui = crosswordGui;
+    private ArrayList<char[][]> matrixes;
+    private JLabel time;
+    CrosswordSolution(CrosswordGui crosswordGui, JLabel time) {
+        this.gui = crosswordGui;
+        this.time = time;
     }
     @Override
     public void actionPerformed(ActionEvent e) {
         long start = System.currentTimeMillis();
         matrixes = new ArrayList<>();
-        fmatrixes = new ArrayList<>();
         crosswords = new Stack<>();
         words = new Stack<>();
         currentposes = new Stack<>();
@@ -32,7 +33,7 @@ public class CrosswordSolution implements ActionListener {
         ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -58,8 +59,7 @@ public class CrosswordSolution implements ActionListener {
             gui.result("A solution is found",true);
         }
         long end = System.currentTimeMillis();
-        float sec = (end - start) / 1000F;
-        System.out.println("All conditions searched for " + sec+ " seconds");
+        time.setText("Time to solve: "+(end - start) / 1000F + " seconds");
     }
     private char[][] solve_Puzzle()
     {
@@ -69,7 +69,6 @@ public class CrosswordSolution implements ActionListener {
         char[][] cmatrix;
         ArrayList<String> vnextmap, hnextmap;
         ArrayList<String> cmap;
-        String aname = "";
         int current;
         outer:
         while(!crosswords.isEmpty()) {
@@ -119,7 +118,6 @@ public class CrosswordSolution implements ActionListener {
                                     return hnextmatrix;
                                 currentposes.pop();
                                 currentposes.push(current + 1);  // we update current position of this matrix's wordlist
-                                t1 = false; t2 = false;
                                 if(t3) {
                                     if(!lookformatrixes(hnextmatrix)) {
                                         hnextmap.remove(name);
@@ -127,7 +125,6 @@ public class CrosswordSolution implements ActionListener {
                                         words.push(hnextmap);
                                         crosswords.push(hnextmatrix);
                                         matrixes.add(hnextmatrix);
-                                        t1 = true;
                                     }
                                 }
                                 if(t4) {  //We put our matrix, both horizontically and vertically if possible, since when this word is put with only horizontically maybe it has a solution in vertical and vice versa(or both)
@@ -137,11 +134,8 @@ public class CrosswordSolution implements ActionListener {
                                         words.push(vnextmap);
                                         crosswords.push(vnextmatrix);
                                         matrixes.add(vnextmatrix);
-                                        t2 = true;
                                     }
                                 }
-                                if (!(t1 || t2))   //If cannot be filled anyway we look another word
-                                    continue;
                                 continue outer;
                             }
                         }

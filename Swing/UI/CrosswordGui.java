@@ -47,8 +47,15 @@ public class CrosswordGui {
         // set up the main GUI
         gui.setBorder(new EmptyBorder(10, 5, 10, 5));
         JToolBar tools = new JToolBar();
+        JToolBar time = new JToolBar();
+        time.setFloatable(false);
         tools.setFloatable(false);
+
+        gui.add(time,BorderLayout.PAGE_END);
         gui.add(tools, BorderLayout.PAGE_START);
+
+        JLabel time_label = new JLabel("Time to solve: ");
+        time.add(time_label);
 
         JButton newButton = new JButton("New");
         newButton.addActionListener((ActionEvent e) -> {
@@ -78,7 +85,7 @@ public class CrosswordGui {
         );
 
         solveButton = new JButton("Solve");
-        solveButton.addActionListener(new CrosswordSolution(this));
+        solveButton.addActionListener(new CrosswordSolution(this,time_label));
 
         tools.add(newButton);
         tools.addSeparator();
