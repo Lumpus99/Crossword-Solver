@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -77,19 +78,28 @@ public class SizePicker extends JFrame {
         constraints.gridx = 0;
 
         JSlider slider = new JSlider(JSlider.HORIZONTAL,
-                40,70,50);
+                0,100,50);
         slider.addChangeListener((ChangeEvent e) ->
             percentage.setText(slider.getValue()+"%")
         );
         Hashtable<Integer,JLabel> position = new Hashtable<>();
         slider.setMinorTickSpacing(10);
         slider.setPaintTicks(true);
+        position.put(0, new JLabel("0%"));
+        position.put(10, new JLabel("10%"));
+        position.put(20, new JLabel("20%"));
+        position.put(30, new JLabel("30%"));
         position.put(40, new JLabel("40%"));
         position.put(50, new JLabel("50%"));
         position.put(60, new JLabel("60%"));
         position.put(70, new JLabel("70%"));
+        position.put(80, new JLabel("80%"));
+        position.put(90, new JLabel("90%"));
+        position.put(100, new JLabel("100%"));
         slider.setLabelTable(position);
         slider.setPaintLabels(true);
+        Dimension d = slider.getPreferredSize();
+        slider.setPreferredSize(new Dimension(d.width + 170,d.height));
 
         newPanel.add(slider,constraints);
 
@@ -107,6 +117,7 @@ public class SizePicker extends JFrame {
             if((Integer)x_size.getValue()>0 || (Integer)y_size.getValue() >0){
                 new CrosswordGui((Integer)x_size.getValue(),(Integer)y_size.getValue(),slider.getValue());
                 this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+                CrosswordSolution.matrixes = new ArrayList<>();
             }
 
         });
@@ -120,7 +131,7 @@ public class SizePicker extends JFrame {
 
         pack();
         setLocationRelativeTo(null);
-        setSize(380,320);
+        setSize(580,320);
 
         this.setVisible(true);
     }

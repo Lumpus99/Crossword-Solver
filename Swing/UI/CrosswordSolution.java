@@ -16,7 +16,7 @@ public class CrosswordSolution implements ActionListener {
     private Stack<char[][]> crosswords;
     private Stack<ArrayList<String>> words;
     private Stack<Integer> currentposes;
-    private ArrayList<char[][]> matrixes;
+    public static ArrayList<char[][]> matrixes;
     private JLabel time;
     CrosswordSolution(CrosswordGui crosswordGui, JLabel time) {
         this.gui = crosswordGui;
@@ -25,7 +25,6 @@ public class CrosswordSolution implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         long start = System.currentTimeMillis();
-        matrixes = new ArrayList<>();
         crosswords = new Stack<>();
         words = new Stack<>();
         currentposes = new Stack<>();
@@ -139,6 +138,7 @@ public class CrosswordSolution implements ActionListener {
                                         t2 = true;
                                     }
                                 }
+
                                 if(!(t1 || t2))
                                     continue;
                                 continue outer;
@@ -314,7 +314,7 @@ public class CrosswordSolution implements ActionListener {
                     }
                 }
                 else{
-                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name)) // Here we look for substring if there is its ok otherwise we remove it.
+                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name, nextmap, i)) // Here we look for substring if there is its ok otherwise we remove it.
                         return false;
                 }
             }
@@ -358,7 +358,7 @@ public class CrosswordSolution implements ActionListener {
                     }
                 }
                 else{
-                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name))
+                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name, nextmap, i))
                         return false;
                 }
             }
@@ -387,11 +387,12 @@ public class CrosswordSolution implements ActionListener {
             }
         }
     }
-    private boolean containsorassub(int z, int y, int x,int[] marker, int count, int xory, char[][] nextmatrix,String word,String name) {
+    private boolean containsorassub(int z, int y, int x,int[] marker, int count, int xory, char[][] nextmatrix,String word,String name,ArrayList<String> nextmap, int i) {
         //THIS METHOD works when need to look at meaningful words when its available to put
         boolean t = false, f;
+        String sname = "";
         for (String keys : WORDS_MAP.keySet()) {
-            if(!name.equals(keys)) {
+            if(keys.length() != 1 && nextmap.contains(keys) && !name.equals(keys)) {
                 t = true;
                 f = false;
                 if (WORDS_MAP.get(keys) < word.length())
@@ -403,9 +404,18 @@ public class CrosswordSolution implements ActionListener {
                         t = false;
                         break;
                     }
+                    sname = keys;
                 }
-                if (t && f) //IF one put word is substring at least once then we're done.
-                    break;
+                if (t && f) { //IF one put word is substring at least once then we're done.
+                    if(xory == 0 && canbeFilled(i, y,-1, sname.length(),nextmatrix)) {
+                        //System.out.println("1=SUB WORD= "+word + "  SUBBED "+sname + " AND pos ="+ x + " " + y);
+                        break;
+                    }
+                    if (xory == -1 && canbeFilled(x, i,0, sname.length(),nextmatrix) ){
+                        //System.out.println("2=SUB WORD= "+word + "  SUBBED "+sname + " AND pos ="+ x + " " + y);
+                        break;
+                    }
+                }
             }
         }
         if (!t) {   //Which means we did not find any substring then we must remove it.
