@@ -3,7 +3,6 @@ package Swing.UI;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.HashMap;
@@ -29,10 +28,11 @@ public class CrosswordSolution implements ActionListener {
         words = new Stack<>();
         currentposes = new Stack<>();
         WORDS_MAP = new HashMap<>();
+        matrixes = new ArrayList<>();
         ArrayList<String> allwords = new ArrayList<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\words2.txt"));
+            br = new BufferedReader(new FileReader("C:\\Users\\Süleyman\\IdeaProjects\\Crossword-Solver\\popular.txt"));
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -65,91 +65,54 @@ public class CrosswordSolution implements ActionListener {
         if(!lookforonewords())
             return null;
         char[][] vnextmatrix,hnextmatrix ;
-        char[][] cmatrix;
+        char[][] cmatrix = crosswords.peek();
         ArrayList<String> vnextmap, hnextmap;
-        ArrayList<String> cmap;
-        int current;
-        outer:
-        while(!crosswords.isEmpty()) {
-            cmatrix = crosswords.peek();
-            cmap = words.peek();
-            for (int i = 0; i < cmatrix.length; i++) {
-                for (int j = 0; j < cmatrix[i].length; j++) {
-                    if (cmatrix[i][j] != '?' && (i == 0 || j == 0 || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')) {
-                        for (current = currentposes.peek(); current < cmap.size(); current++) {
-                            String name = cmap.get(current);
-                            if (cmatrix[i][j] == '\0' || (cmatrix[i][j] != '\0' && name.charAt(0) == cmatrix[i][j] && ((i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0') || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0'))))
-                            {
-                                //We make a copy here.
-                                boolean t1 = true, t2 = true, t3 = true, t4 = true;
-                                int value = name.length();
-                                vnextmatrix = new char[gui.getX_size()][gui.getY_size()];
-                                copyGui(vnextmatrix, cmatrix);
-                                hnextmatrix = new char[gui.getX_size()][gui.getY_size()];
-                                copyGui(hnextmatrix, cmatrix);
-                                vnextmap = new ArrayList<>();
-                                copyMap(vnextmap, cmap);
-                                hnextmap = new ArrayList<>();
-                                copyMap(hnextmap, cmap);
-                                t1 = canbeFilled(i, j, -1, value ,hnextmatrix);
-                                t2 = canbeFilled(i, j, 0, value ,vnextmatrix);
-                                if (!(t1 || t2)) {  //If cannot be filled anyway we look another word
-                                    vnextmap = null;
-                                    vnextmatrix = null;
-                                    hnextmatrix = null;
-                                    hnextmap = null;
-                                    continue;
-                                }
-                                if (t1)
-                                    t3 = fillGrid(i, j, -1, name, hnextmatrix, hnextmap);
-                                if (t2)
-                                    t4 = fillGrid(i, j, 0, name, vnextmatrix, vnextmap);
-                                if (!(t3 || t4)) {  //If cannot be filled even with conditions we look another word again
-                                    vnextmap = null;
-                                    vnextmatrix = null;
-                                    hnextmatrix = null;
-                                    hnextmap = null;
-                                    continue;
-                                }
-                                if (everycharacterisnotEmpty(vnextmatrix)) //We control both types for looking solution
-                                    return vnextmatrix;
-                                if (everycharacterisnotEmpty(hnextmatrix))
-                                    return hnextmatrix;
-                                currentposes.pop();
-                                currentposes.push(current + 1);  // we update current position of this matrix's wordlist
-                                t1 = false; t2 = false;
-                                if(t3) {
-                                    if(!lookformatrixes(hnextmatrix)) {
-                                        hnextmap.remove(name);
-                                        currentposes.push(0);
-                                        words.push(hnextmap);
-                                        crosswords.push(hnextmatrix);
-                                        matrixes.add(hnextmatrix);
-                                        t1 = true;
-                                    }
-                                }
-                                if(t4) {  //We put our matrix, both horizontically and vertically if possible, since when this word is put with only horizontically maybe it has a solution in vertical and vice versa(or both)
-                                    if(!lookformatrixes(vnextmatrix)) {
-                                        vnextmap.remove(name);
-                                        currentposes.push(0);
-                                        words.push(vnextmap);
-                                        crosswords.push(vnextmatrix);
-                                        matrixes.add(vnextmatrix);
-                                        t2 = true;
-                                    }
-                                }
-
-                                if(!(t1 || t2))
-                                    continue;
-                                continue outer;
+        ArrayList<String> cmap = words.peek();
+        for (int i = 0; i < cmatrix.length; i++) {
+            for (int j = 0; j < cmatrix[i].length; j++) {
+                if (cmatrix[i][j] != '?' &&  (cmatrix[i][j] == '\0' || (j < cmatrix[i].length - 1 && cmatrix[i][j + 1] == '\0') || (i < cmatrix.length - 1 && cmatrix[i + 1][j] == '\0'))  &&  (i == 0 || j == 0 || cmatrix[i][j - 1] == '?' || cmatrix[i - 1][j] == '?')) {
+                    boolean wput = false;
+                    for (int current = 0; current < cmap.size(); current++) {
+                        String name = cmap.get(current);
+                        //We make a copy here.
+                        boolean t1, t2, t3 = false, t4 = false;
+                        int value = name.length();
+                        t1 = (j == 0 || cmatrix[i][j - 1] == '?') && canbeFilled(i, j, -1, value ,cmatrix);
+                        t2 = (i == 0 || cmatrix[i - 1][j] == '?') &&canbeFilled(i, j, 0, value ,cmatrix);
+                        if (!(t1 || t2))   //If cannot be filled anyway we look another word
+                            continue;
+                        ArrayList<String> nnextmap = new ArrayList<>();
+                        copyMap(nnextmap,cmap);
+                        nnextmap.remove(name);
+                        char[][] nnextmatrix = new char[cmatrix.length][cmatrix[0].length];
+                        copyGui(nnextmatrix,cmatrix);
+                        if (t1)
+                            t3 = fillGrid(i, j, -1, name, nnextmatrix, nnextmap);
+                        if (!t3 && t2)
+                            t4 = fillGrid(i, j, 0, name, nnextmatrix, nnextmap);
+                        if (!(t3 || t4))  //If cannot be filled even with conditions we look another word again
+                            continue;
+                        copyGui(cmatrix,nnextmatrix);
+                        cmap = new ArrayList<>();
+                        copyMap(cmap,nnextmap);
+                        for (int o = 0; o < cmatrix.length; o++) {
+                            for (int n = 0; n < cmatrix[o].length; n++) {
+                                System.out.print(cmatrix[o][n]);
                             }
+                            System.out.println();
                         }
+                        System.out.println("NAME  "+name);
+                        if (everycharacterisnotEmpty(cmatrix)) //We control both types for looking solution
+                            return cmatrix;
+                        wput = true;
+                        break;
                     }
+                    /*if(!wput) {
+                        System.out.println("NO SLOT!!");
+                        return null;
+                    }*/
                 }
             }
-            crosswords.pop(); //When we cannot do anything with these matrix with its words we pop these.
-            words.pop();
-            currentposes.pop();
         }
         return null;
     }
@@ -178,10 +141,10 @@ public class CrosswordSolution implements ActionListener {
         char[][] tempm = crosswords.pop();
         ArrayList<String> tempa = words.pop();
         for (String name : tempa)
-            if(name.length() == 1)
+            if (name.length() == 1)
                 olenwords++;
-        for(int i = 0; i < tempm.length; i++) {
-            for (int j = 0; j < tempm[i].length; j++){
+        for (int i = 0; i < tempm.length; i++) {
+            for (int j = 0; j < tempm[i].length; j++) {
                 if (tempm[i][j] != '?' && ((i == 0 && j == 0 && tempm[i][j + 1] == '?' && tempm[i + 1][j] == '?') || (i == tempm.length - 1 && j == tempm[i].length - 1 && tempm[i - 1][j] == '?' && tempm[i][j - 1] == '?') || (i == 0 && j == tempm[i].length - 1 && tempm[i][j - 1] == '?' && tempm[i + 1][j] == '?') || (i == tempm.length - 1 && j == 0 && tempm[i - 1][j] == '?' && tempm[i][j + 1] == '?') || (i > 0 && i < tempm.length - 1 && j == 0 && tempm[i - 1][j] == '?' && tempm[i + 1][j] == '?' && tempm[i][j + 1] == '?') || (i > 0 && i < tempm.length - 1 && j == tempm[i].length - 1 && tempm[i - 1][j] == '?' && tempm[i + 1][j] == '?' && tempm[i][j - 1] == '?') || (j > 0 && j < tempm[i].length - 1 && i == tempm.length - 1 && tempm[i - 1][j] == '?' && tempm[i][j + 1] == '?' && tempm[i][j - 1] == '?') || (j > 0 && j < tempm[i].length - 1 && i == 0 && tempm[i + 1][j] == '?' && tempm[i][j + 1] == '?' && tempm[i][j - 1] == '?') || (j > 0 && j < tempm[i].length - 1 && i > 0 && i < tempm.length - 1 && tempm[i + 1][j] == '?' && tempm[i - 1][j] == '?' && tempm[i][j - 1] == '?' && tempm[i][j + 1] == '?'))) {
                     if (tempm[i][j] != '\0' && !WORDS_MAP.containsKey(tempm[i][j] + "")) // Maybe user put word here, it MUST be in text otherwise we return false.
                         return false;
@@ -189,8 +152,10 @@ public class CrosswordSolution implements ActionListener {
                 }
             }
         }
-        if(olenwords < countsurrounded) // If text has less one-lengthed words we return false
+        if (olenwords < countsurrounded){ // If text has less one-lengthed words we return false
+            System.out.println("Not enough one-length words to fill!");
             return false;
+        }
         for(int i = 0; i < tempm.length; i++){
             for(int j = 0; j < tempm[i].length; j++) {
                 if (tempm[i][j] != '?' && ((i == 0 && j == 0 && tempm[i][j + 1] == '?' && tempm[i + 1][j] == '?') || (i == tempm.length - 1 && j == tempm[i].length - 1 && tempm[i - 1][j] == '?' && tempm[i][j - 1] == '?') || (i == 0 && j == tempm[i].length - 1 && tempm[i][j - 1] == '?' && tempm[i + 1][j] == '?') || (i == tempm.length - 1 && j == 0 && tempm[i - 1][j] == '?' && tempm[i][j + 1] == '?') || (i > 0 && i < tempm.length - 1 && j == 0 && tempm[i - 1][j] == '?' && tempm[i + 1][j] == '?' && tempm[i][j + 1] == '?') || (i > 0 && i < tempm.length - 1 && j == tempm[i].length - 1 && tempm[i - 1][j] == '?' && tempm[i + 1][j] == '?' && tempm[i][j - 1] == '?') || (j > 0 && j < tempm[i].length - 1 && i == tempm.length - 1 && tempm[i - 1][j] == '?' && tempm[i][j + 1] == '?' && tempm[i][j - 1] == '?') || (j > 0 && j < tempm[i].length - 1 && i == 0 && tempm[i + 1][j] == '?' && tempm[i][j + 1] == '?' && tempm[i][j - 1] == '?') || (j > 0 && j < tempm[i].length - 1 && i > 0 && i < tempm.length - 1 && tempm[i + 1][j] == '?' && tempm[i - 1][j] == '?' && tempm[i][j - 1] == '?' && tempm[i][j + 1] == '?'))) {
@@ -214,8 +179,10 @@ public class CrosswordSolution implements ActionListener {
                 avalenword = true;
                 break;
             }
-        if(!avalenword)
+        if(!avalenword) {
+            System.out.println("Not enough word length to fill!");
             return false;
+        }
         for(int i = 0; i < tempa.size(); i++) //WE remove rest of the one-length words.
             if(tempa.get(i).length() == 1 || tempa.get(i).length() > maxblank) {
                 tempa.remove(tempa.get(i));
@@ -253,10 +220,10 @@ public class CrosswordSolution implements ActionListener {
         boolean t = true;
         if(xory == -1){ // we look for y
             int z = y,count = 0;
-            do{
+            while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' ){
                 count++;
                 z++;
-            }while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' );
+            }
             if(value != count )
                 t = false;
         }
@@ -276,8 +243,6 @@ public class CrosswordSolution implements ActionListener {
     {
         int[] marker = new int[name.length()];
         if(xory == -1){ // we fill for y
-            if(!((y >= 1 && nextmatrix[x][y - 1] == '?') || y == 0))  //WE look that position must be at terrain or behind of black zone
-                return false;
             int z = y,count = 0;
             while(z < nextmatrix[x].length && nextmatrix[x][z] != '?' )
             {
@@ -293,35 +258,50 @@ public class CrosswordSolution implements ActionListener {
                 count++;
                 z++;
             }
+            ArrayList<String> nnextmap = new ArrayList<>();
+            copyMap(nnextmap,nextmap);
+            nnextmap.remove(name);
+            char[][] nnextmatrix = new char[nextmatrix.length][nextmatrix[0].length];
+            copyGui(nnextmatrix,nextmatrix);
             for(int i = y; i < y + name.length(); i++)  //WE look here for horizontal lines for all they must be meaningful words
             {
                 int j = x , empty = 0;
                 String word = "";
-                while ( j != 0 && nextmatrix[j][i] != '?') //we go terrain or black zone
+                while ( j != 0 && nnextmatrix[j][i] != '?') //we go terrain or black zone
                     j--;
-                if (nextmatrix[j][i] == '?')
+                if (nnextmatrix[j][i] == '?')
                     j++;
-                while ( j < nextmatrix.length && nextmatrix[j][i] != '?' && nextmatrix[j][i] != '\0') { //Now we build our word
-                    word += nextmatrix[j][i];
+                while ( j < nnextmatrix.length && nnextmatrix[j][i] != '?' && nnextmatrix[j][i] != '\0') { //Now we build our word
+                    word += nnextmatrix[j][i];
                     j++;
                 }
-                if (j < nextmatrix.length && nextmatrix[j][i] != '?' && nextmatrix[j][i] == '\0') // If we reach empty box we make our empty
+                if (j < nnextmatrix.length &&  nnextmatrix[j][i] == '\0') // If we reach empty box we make our empty
                     empty = 1;
                 if(empty == 0) {  //WE are looking for this since empty=0 means we reached terrain or black zone.
-                    if (!WORDS_MAP.containsKey(word) && !word.equals("")) { //If it NOT available in hashmap which means we cannot use that word!
+                    if (!WORDS_MAP.containsKey(word)) { //If it NOT available in hashmap which means we cannot use that word!
                         clearWord(z, x, y, marker, count, xory, nextmatrix);
                         return false;
                     }
                 }
                 else{
-                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name, nextmap, i)) // Here we look for substring if there is its ok otherwise we remove it.
+                    if(!word.equals(""))
+                        while ( j != 0 && nnextmatrix[j][i] != '?' && nnextmatrix[j - 1][i] != '?')
+                            j--;
+
+                    if(!containsorassub( y, x, xory, nnextmatrix, word, name, nnextmap, i, j)) {
+                        clearWord(z, x, y, marker, count, xory, nextmatrix);
                         return false;
+                    }
+
+                    //BURADA VAR OLAN MATRİSE BAKMADA KALDIM
+
                 }
             }
+            copyGui(nextmatrix, nnextmatrix);
+            nextmap = new ArrayList<>();
+            copyMap(nextmap, nnextmap);
         }
         else{ // we fill for x  (SAME ACTIONS happen at above ) only looking conditions about positions are changed
-            if(!((x >= 1 && nextmatrix[x - 1][y] == '?') || x == 0))
-                return false;
             int z = x,count = 0;
             while(z < nextmatrix.length && nextmatrix[z][y] != '?' )
             {
@@ -337,31 +317,47 @@ public class CrosswordSolution implements ActionListener {
                 count++;
                 z++;
             }
+            ArrayList<String> nnextmap = new ArrayList<>();
+            copyMap(nnextmap,nextmap);
+            nnextmap.remove(name);
+            char[][] nnextmatrix = new char[nextmatrix.length][nextmatrix[0].length];
+            copyGui(nnextmatrix,nextmatrix);
             for(int i = x; i < x + name.length(); i++)
             {
                 int j = y , empty = 0;
                 String word = "";
-                while ( j != 0 && nextmatrix[i][j] != '?')
+                while ( j != 0 && nnextmatrix[i][j] != '?')
                     j--;
-                if (nextmatrix[i][j] == '?')
+                if (nnextmatrix[i][j] == '?')
                     j++;
-                while ( j < nextmatrix[x].length && nextmatrix[i][j] != '?' && nextmatrix[i][j] != '\0') {
-                    word += nextmatrix[i][j];
+                while ( j < nnextmatrix[x].length && nnextmatrix[i][j] != '?' && nnextmatrix[i][j] != '\0') {
+                    word += nnextmatrix[i][j];
                     j++;
                 }
-                if (j < nextmatrix[x].length && nextmatrix[i][j] != '?' && nextmatrix[i][j] == '\0')
+                if (j < nnextmatrix[x].length && nnextmatrix[i][j] == '\0')
                     empty = 1;
                 if(empty == 0) {
-                    if (!WORDS_MAP.containsKey(word) && !word.equals("")) {
+                    if (!WORDS_MAP.containsKey(word) ) {
                         clearWord(z, x, y, marker, count, xory, nextmatrix);
                         return false;
                     }
                 }
                 else{
-                    if (!word.equals("") && !containsorassub(z, y, x, marker, count, xory, nextmatrix, word, name, nextmap, i))
+                    if(!word.equals(""))
+                        while ( j != 0 && nnextmatrix[i][j] != '?' && nnextmatrix[i][j - 1] != '?')
+                            j--;
+                    if(!containsorassub( y, x, xory, nnextmatrix, word, name, nnextmap, i, j)) {
+                        clearWord(z, x, y, marker, count, xory, nextmatrix);
                         return false;
+                    }
+
+
                 }
             }
+            copyGui(nextmatrix, nnextmatrix);
+            nextmap = new ArrayList<>();
+            copyMap(nextmap, nnextmap);
+
         }
         return true;
     }
@@ -387,41 +383,51 @@ public class CrosswordSolution implements ActionListener {
             }
         }
     }
-    private boolean containsorassub(int z, int y, int x,int[] marker, int count, int xory, char[][] nextmatrix,String word,String name,ArrayList<String> nextmap, int i) {
+    private boolean containsorassub(int y, int x, int xory, char[][] nnextmatrix,String word,String name,ArrayList<String> nnextmap, int i, int j) {
         //THIS METHOD works when need to look at meaningful words when its available to put
-        boolean t = false, f;
-        String sname = "";
-        for (String keys : WORDS_MAP.keySet()) {
-            if(keys.length() != 1 && nextmap.contains(keys) && !name.equals(keys)) {
-                t = true;
-                f = false;
-                if (WORDS_MAP.get(keys) < word.length())
-                    f = false;
-                else
-                    f = true;
+        boolean k = false;
+        for (String keys : nnextmap) {
+            if(keys.equals(name) || keys.equals(word))
+                continue;
+            boolean t = true;
+            if(word.equals(""))
+                t = false;
+            if (keys.length() >= word.length() && !word.equals("") )
                 for (int e = 0; e < word.length(); e++) {
-                    if (WORDS_MAP.get(keys) >= word.length() && keys.charAt(e) != word.charAt(e)) { //IN here we are looking for substrings
+                    if (keys.charAt(e) != word.charAt(e)) { //IN here we are looking for substrings
                         t = false;
                         break;
                     }
-                    sname = keys;
                 }
-                if (t && f) { //IF one put word is substring at least once then we're done.
-                    if(xory == 0 && canbeFilled(i, y,-1, sname.length(),nextmatrix)) {
-                        //System.out.println("1=SUB WORD= "+word + "  SUBBED "+sname + " AND pos ="+ x + " " + y);
-                        break;
-                    }
-                    if (xory == -1 && canbeFilled(x, i,0, sname.length(),nextmatrix) ){
-                        //System.out.println("2=SUB WORD= "+word + "  SUBBED "+sname + " AND pos ="+ x + " " + y);
-                        break;
-                    }
+            if (word.equals("") ||  t) { //IF one put word is substring at least once then we're done.
+                if (xory == 0 && ((!word.equals("") && canbeFilled(i, j, -1, keys.length(), nnextmatrix) && fillGrid(i, j, -1, keys, nnextmatrix, nnextmap)) || (word.equals("") && ((canbeFilled(i, j, -1, keys.length(), nnextmatrix) && fillGrid(i, j, -1, keys, nnextmatrix, nnextmap)) || (canbeFilled(i, j, 0, keys.length(), nnextmatrix) && fillGrid(i, j, 0, keys, nnextmatrix, nnextmap))) ))) {
+                //if (xory == 0 && ((!word.equals("") && canbeFilled(i, y, -1, keys.length(), nnextmatrix) && fillGrid(i, y, -1, keys, nnextmatrix, nnextmap)) || (word.equals("") && canbeFilled(i, j, -1, keys.length(), nnextmatrix) && fillGrid(i, j, -1, keys, nnextmatrix, nnextmap)))) {
+
+                    //System.out.println("1=SUB WORD= " + word + "  SUBBED " + keys + " AND pos =" + x + " " + y);
+                    /*for (int o = 0; o < nnextmatrix.length; o++) {
+                        for (int n = 0; n < nnextmatrix[o].length; n++) {
+                            System.out.print(nnextmatrix[o][n]);
+                        }
+                        System.out.println();
+                    }*/
+                    k = true;
+                    break;
+
+                } else if (xory == -1 && ((!word.equals("") && canbeFilled(j, i, 0, keys.length(), nnextmatrix) && fillGrid(j, i, 0, keys, nnextmatrix, nnextmap)) || (word.equals("") && ((canbeFilled(j, i, 0, keys.length(), nnextmatrix) && fillGrid(j, i, 0, keys, nnextmatrix, nnextmap)) || (canbeFilled(j, i, -1, keys.length(), nnextmatrix) && fillGrid(j, i, -1, keys, nnextmatrix, nnextmap))) ))) {
+                    //System.out.println("2=SUB WORD= " + word + "  SUBBED " + keys + " AND pos =" + x + " " + y);
+                    /*for (int o = 0; o < nnextmatrix.length; o++) {
+                        for (int n = 0; n < nnextmatrix[o].length; n++) {
+                            System.out.print(nnextmatrix[o][n]);
+                        }
+                        System.out.println();
+                    }*/
+                    k = true;
+                    break;
                 }
             }
         }
-        if (!t) {   //Which means we did not find any substring then we must remove it.
-            clearWord(z, x, y, marker, count, xory,nextmatrix);
+        if (!k)    //Which means we did not find any substring then we must remove it.
             return false;
-        }
         return true;
     }
     //This line is needed for SOLUTION
